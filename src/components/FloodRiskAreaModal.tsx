@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Calendar, Droplets, FileText, AlertTriangle, Eye, Zap, Car, Users, Mountain, Layers, Home, Factory, Building, TreePine, Waves, Clock, Shield, Wrench, Cloud, Thermometer, Wind } from 'lucide-react';
 import { FloodRiskArea, AreaType, SlopeType, SoilType, DrainageQuality, SurfaceCover, WaterBodyType, FloodCause, FloodFrequency, FloodCoverage, BuildingType, GroundCondition, FloodLevel } from '../types';
+import { OPENWEATHER_API_KEY, OPENWEATHER_BASE_URL } from '../firebase';
 
 interface FloodRiskAreaModalProps {
   isOpen: boolean;
@@ -26,16 +27,50 @@ const VULNERABLE_GROUPS = ['children', 'elderly', 'PWDs', 'none'];
 const CRITICAL_ASSETS = ['roads', 'bridges', 'hospitals', 'schools', 'farmlands', 'substations', 'others'];
 const FLOOD_IMPACTS = ['damage', 'crops', 'road blockage', 'casualties', 'power outage', 'water contamination', 'business disruption'];
 
-// Mock weather data fetching function
+// Real weather data fetching function using OpenWeatherMap API
 const fetchWeatherData = async (coordinates: number[]): Promise<any> => {
-  // In a real implementation, this would call OpenWeather API
-  return {
-    rainfall: Math.random() * 50,
-    forecastRainfall: Math.random() * 100,
-    stormAlerts: Math.random() > 0.7 ? 'Typhoon Warning Signal #2' : '',
-    windSpeed: Math.random() * 80,
-    temperature: 25 + Math.random() * 10
-  };
+  try {
+    const [longitude, latitude] = coordinates;
+    const url = `${OPENWEATHER_BASE_URL}/weather?lat=${latitude}&lon=${longitude}&appid=${OPENWEATHER_API_KEY}&units=metric`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Weather API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Extract rainfall data (mm/hr)
+    const rainfall = data.rain?.['1h'] || data.rain?.['3h'] / 3 || 0;
+    
+    // Generate storm alerts based on weather conditions
+    let stormAlerts = '';
+    if (data.weather?.[0]?.main === 'Thunderstorm') {
+      stormAlerts = 'Thunderstorm Warning';
+    } else if (data.weather?.[0]?.main === 'Rain' && data.wind?.speed > 15) {
+      stormAlerts = 'Heavy Rain and Wind Advisory';
+    } else if (data.wind?.speed > 25) {
+      stormAlerts = 'High Wind Warning';
+    }
+    
+    return {
+      rainfall: Math.round(rainfall * 10) / 10,
+      forecastRainfall: 0, // Would need forecast API for this
+      stormAlerts,
+      windSpeed: Math.round((data.wind?.speed || 0) * 3.6 * 10) / 10, // Convert m/s to km/h
+      temperature: Math.round((data.main?.temp || 0) * 10) / 10
+    };
+  } catch (error) {
+    console.error('Error fetching weather data:', error);
+    // Return fallback data if API fails
+    return {
+      rainfall: 0,
+      forecastRainfall: 0,
+      stormAlerts: 'Weather data unavailable',
+      windSpeed: 0,
+      temperature: 0
+    };
+  }
 };
 
 // Mock elevation fetching function
