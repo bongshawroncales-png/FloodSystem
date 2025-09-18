@@ -64,14 +64,25 @@ const getWeatherIcon = (main: string, description: string) => {
 
 const fetchWeatherData = async (lat: number, lng: number): Promise<WeatherData | null> => {
   try {
+    // Debug: Check if API key is loaded
+    console.log('API Key loaded:', OPENWEATHER_API_KEY ? 'Yes' : 'No');
+    console.log('API Key value:', OPENWEATHER_API_KEY);
+    
+    if (!OPENWEATHER_API_KEY) {
+      throw new Error('OpenWeatherMap API key not found. Please check your .env file.');
+    }
+    
     // Fetch current weather
     const currentWeatherResponse = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric`
     );
+    console.log('Current weather API URL:', `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric`);
+    
     if (!currentWeatherResponse.ok) {
       throw new Error(`Current weather API error: ${currentWeatherResponse.status}`);
     }
     const currentWeatherData = await currentWeatherResponse.json();
+    console.log('Current weather data received:', currentWeatherData);
     
     // Fetch 5-day forecast
     const forecastResponse = await fetch(
@@ -81,6 +92,7 @@ const fetchWeatherData = async (lat: number, lng: number): Promise<WeatherData |
       throw new Error(`Forecast API error: ${forecastResponse.status}`);
     }
     const forecastData = await forecastResponse.json();
+    console.log('Forecast data received:', forecastData);
     
     // Process forecast data - group by day
     const dailyForecasts: { [key: string]: any[] } = {};
