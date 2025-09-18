@@ -178,11 +178,59 @@ export interface FloodReport {
 
 export interface FloodIncident {
   id?: string;
+  incidentId?: string; // Reference number
   title: string;
   description: string;
   location: string;
+  barangay?: string;
+  municipality?: string;
+  province?: string;
   coordinates: number[];
+  gpsCoordinates?: string;
+  
+  // Timing
+  onsetDateTime?: string;
+  endDateTime?: string;
+  
+  // Cause and severity
+  cause?: string;
   severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  floodDepth?: number; // in meters
+  duration?: string;
+  areaExtent?: string;
+  
+  // Human impact
+  casualties?: {
+    dead?: number;
+    missing?: number;
+    injured?: number;
+  };
+  evacuatedPeople?: number;
+  vulnerableGroupsAffected?: string[];
+  
+  // Property impact
+  housesDamaged?: number;
+  housesDestroyed?: number;
+  infrastructureAffected?: string[];
+  agricultureLosses?: string;
+  economicDamages?: number;
+  
+  // Environmental context
+  rainfallData?: string;
+  riverLevel?: string;
+  weatherEvent?: string;
+  
+  // Response
+  respondingAgencies?: string[];
+  evacuationCenters?: string;
+  reliefProvided?: string;
+  challengesEncountered?: string;
+  
+  // Documentation
+  photos?: string[];
+  maps?: string[];
+  reports?: string[];
+  
   status: 'Pending' | 'Confirmed' | 'Resolved';
   reportedBy: {
     uid: string;
@@ -197,7 +245,6 @@ export interface FloodIncident {
   createdAt: string;
   confirmedAt?: string;
   resolvedAt?: string;
-  images?: string[];
   affectedPopulation?: number;
   relatedAreaId?: string; // Link to the flood risk area
   editHistory?: {
