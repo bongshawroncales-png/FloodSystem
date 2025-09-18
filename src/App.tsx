@@ -188,8 +188,8 @@ const RISK_COLORS = {
 
 function App() {
   const [viewState, setViewState] = useState<ViewState>({
-    longitude: 125.375,
-    latitude: 12.1116,
+    longitude: 12.1113,
+    latitude: 125.3756,
     zoom: 12,
     bearing: 0,
     pitch: 0,
