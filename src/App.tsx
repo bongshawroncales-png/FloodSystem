@@ -196,7 +196,6 @@ function App() {
     padding: { top: 0, bottom: 0, left: 0, right: 0 }
   });
 
-  const [showWeather, setShowWeather] = useState(false);
   const [currentLayer, setCurrentLayer] = useState<BasemapKey>('satellite');
   const [showBasemapMenu, setShowBasemapMenu] = useState(false);
   const [floodRiskAreas, setFloodRiskAreas] = useState<FloodRiskArea[]>([]);
@@ -662,17 +661,15 @@ function App() {
         </div>
       </div>
 
-      {/* Weather Panel - Separate positioning */}
-      {showWeather && (
-        <div className="absolute top-4 right-4 z-20 pointer-events-none" style={{ transform: 'translateX(-120px)' }}>
-          <div className="pointer-events-auto">
-            <WeatherPanel 
-              coordinates={{ lat: viewState.latitude, lng: viewState.longitude }}
-              isDarkTheme={isDarkTheme}
-            />
-          </div>
+      {/* Weather Panel - Always visible */}
+      <div className="absolute top-4 right-4 z-20 pointer-events-none" style={{ transform: 'translateX(-120px)' }}>
+        <div className="pointer-events-auto">
+          <WeatherPanel 
+            coordinates={{ lat: viewState.latitude, lng: viewState.longitude }}
+            isDarkTheme={isDarkTheme}
+          />
         </div>
-      )}
+      </div>
 
       {/* Bottom Right Panel - Additional Tools */}
       <div className="absolute bottom-4 right-4 z-10 space-y-3">
@@ -717,22 +714,6 @@ function App() {
           </div>
         </div>
 
-        {/* Weather Tools Panel */}
-        <div className={`${panelClasses} p-3`}>
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={() => setShowWeather(!showWeather)}
-              className={`p-2.5 rounded-lg text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
-                showWeather 
-                  ? (isDarkTheme ? 'bg-blue-600/70 hover:bg-blue-600/90' : 'bg-blue-500/60 hover:bg-blue-500/80')
-                  : `${buttonClasses} hover:bg-blue-500/50`
-              }`}
-              title="Toggle Weather Layer"
-            >
-              <Cloud className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Bottom Left Panel - Coordinates, Zoom & Legend */}
