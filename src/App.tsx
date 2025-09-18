@@ -20,10 +20,13 @@ import { FloodLevel, DrawingState, FloodRiskArea } from './types';
 import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
 import { FloodRiskAreaPopup } from './components/FloodRiskAreaPopup';
 import { HoverTooltip } from './components/HoverTooltip';
+import { AlertNotificationSystem } from './components/AlertNotificationSystem';
+import { FloodIncidentModal } from './components/FloodIncidentModal';
 import { Sidebar } from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
 import { WeatherPanel } from './components/WeatherPanel';
 import { LiveRiskMonitor } from './components/LiveRiskMonitor';
+import { collection as firestoreCollection, addDoc as firestoreAddDoc } from 'firebase/firestore';
 import { AuthPage } from './components/AuthPage';
 import { AdminPage } from './components/AdminPage';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -220,6 +223,8 @@ function App() {
   const [hoveredRiskArea, setHoveredRiskArea] = useState<FloodRiskArea | null>(null);
   const [hoverTooltipPosition, setHoverTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [showLegend, setShowLegend] = useState(true);
+  const [showIncidentModal, setShowIncidentModal] = useState(false);
+  const [selectedAreaForIncident, setSelectedAreaForIncident] = useState<FloodRiskArea | null>(null);
   const mapRef = useRef<any>(null);
 
 
@@ -527,6 +532,26 @@ function App() {
     setDrawingState({ isDrawing: false, currentTool: null, pendingGeometry: null });
     setShowRiskAreaModal(false);
   }, [saveFloodRiskArea]);
+
+  // Handle incident modal
+  const handleShowIncidentModal = useCallback((area: FloodRiskArea) => {
+    setSelectedAreaForIncident(area);
+    setShowIncidentModal(true);
+  }, []);
+
+  // Save flood incident to Firebase
+  const saveFloodIncident = useCallback(async (incident: Omit<FloodIncident, 'id' | 'createdAt'>) => {
+    try {
+      await firestoreAddDoc(firestoreCollection(db, 'floodIncidents'), {
+        ...incident,
+        createdAt: new Date().toISOString()
+      });
+      alert('Flood incident reported successfully!');
+    } catch (error) {
+      console.error('Error saving flood incident:', error);
+      alert('Failed to report flood incident. Please try again.');
+    }
+  }, []);
 
   // Handle shape click to show popup
   const handleShapeClick = useCallback((event: any) => {
@@ -1140,6 +1165,15 @@ function App() {
         </div>
       )}
 
+      {/* Alert Notification System */}
+      <AlertNotificationSystem
+        floodRiskAreas={floodRiskAreas}
+        onShowIncidentModal={handleShowIncidentModal}
+        onViewArea={handleAreaSelect}
+        userRole={userRole}
+        isDarkTheme={isDarkTheme}
+      />
+
       {/* Flood Risk Area Modal */}
       <FloodRiskAreaModal
         isOpen={showRiskAreaModal}
@@ -1162,6 +1196,20 @@ function App() {
             setSelectedRiskArea(null);
             setRiskAreaPopupPosition(null);
           }}
+        />
+      )}
+
+      {/* Flood Incident Modal */}
+      {showIncidentModal && selectedAreaForIncident && user && (
+        <FloodIncidentModal
+          isOpen={showIncidentModal}
+          onClose={() => {
+            setShowIncidentModal(false);
+            setSelectedAreaForIncident(null);
+          }}
+          onSubmit={saveFloodIncident}
+          area={selectedAreaForIncident}
+          user={user}
         />
       )}
 

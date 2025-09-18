@@ -130,6 +130,33 @@ export interface FloodIncident {
 }
 
 // Keep the old FloodReport interface for backward compatibility
+export interface FloodIncident {
+  id?: string;
+  title: string;
+  description: string;
+  location: string;
+  coordinates: number[];
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  status: 'Pending' | 'Confirmed' | 'Resolved';
+  reportedBy: {
+    uid: string;
+    email: string;
+    displayName: string;
+  };
+  confirmedBy?: {
+    uid: string;
+    email: string;
+    displayName: string;
+  };
+  createdAt: string;
+  confirmedAt?: string;
+  resolvedAt?: string;
+  images?: string[];
+  affectedPopulation?: number;
+  relatedAreaId?: string; // Link to the flood risk area
+}
+
+// Keep the old FloodReport interface for backward compatibility
 export interface FloodReport {
   id?: string;
   location: string;
@@ -147,4 +174,30 @@ export interface FloodReport {
     coordinates: number[] | number[][][];
   };
   createdAt: string;
+}
+
+export interface FloodIncident {
+  id?: string;
+  title: string;
+  description: string;
+  location: string;
+  coordinates: number[];
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  status: 'Pending' | 'Confirmed' | 'Resolved';
+  reportedBy: {
+    uid: string;
+    email: string;
+    displayName: string;
+  };
+  confirmedBy?: {
+    uid: string;
+    email: string;
+    displayName: string;
+  };
+  createdAt: string;
+  confirmedAt?: string;
+  resolvedAt?: string;
+  images?: string[];
+  affectedPopulation?: number;
+  relatedAreaId?: string; // Link to the flood risk area
 }
