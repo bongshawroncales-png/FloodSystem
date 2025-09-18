@@ -988,6 +988,7 @@ function App() {
         onShowIncidents={() => setShowIncidentsPage(true)}
         onShowAnalytics={() => setShowAnalyticsPage(true)}
         onShowSettings={() => setShowSettingsPage(true)}
+        onShowSettings={() => setShowSettingsPage(true)}
       />
 
       {/* Top Right Panel - Map Controls */}
