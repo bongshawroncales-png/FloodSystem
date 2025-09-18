@@ -200,4 +200,13 @@ export interface FloodIncident {
   images?: string[];
   affectedPopulation?: number;
   relatedAreaId?: string; // Link to the flood risk area
+  editHistory?: {
+    editedAt: string;
+    editedBy: {
+      uid: string;
+      email: string;
+      displayName: string;
+    };
+    changes: string;
+  }[];
 }

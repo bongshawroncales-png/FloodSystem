@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut, Shield } from 'lucide-react';
+import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut, Shield, FileText } from 'lucide-react';
 import { FloodRiskArea } from '../types';
 import { useAuth } from '../hooks/useAuth';
 
@@ -10,6 +10,7 @@ interface SidebarProps {
   isDarkTheme: boolean;
   onShowAuth: () => void;
   onShowAdmin: () => void;
+  onShowIncidents: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -18,7 +19,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAreaDelete,
   isDarkTheme,
   onShowAuth,
-  onShowAdmin
+  onShowAdmin,
+  onShowIncidents
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, userRole, loading, signInWithGoogle, logout } = useAuth();
