@@ -115,6 +115,17 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
       console.log('Modal opened with geometry:', geometry);
       console.log('Geometry coordinates:', geometry.coordinates);
       
+      // Extract coordinates for Firestore (avoid nested arrays)
+      let extractedCoordinates;
+      if (geometry.type === 'Point') {
+        extractedCoordinates = geometry.coordinates;
+      } else if (geometry.type === 'Polygon') {
+        // For polygons, use the first coordinate pair to avoid nested arrays
+        extractedCoordinates = geometry.coordinates[0][0];
+      } else {
+        extractedCoordinates = [];
+      }
+      
       // Initialize form data with the provided geometry
       setFormData(prev => ({
         ...prev,
@@ -122,10 +133,10 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
           type: geometry.type,
           coordinates: geometry.coordinates
         },
-        coordinates: geometry.coordinates,
+        coordinates: extractedCoordinates,
         basicInfo: {
           ...prev.basicInfo,
-          coordinates: geometry.coordinates
+          coordinates: extractedCoordinates
         }
       }));
     }
