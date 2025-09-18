@@ -258,19 +258,41 @@ function App() {
       const areas: FloodRiskArea[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        // Parse geometry coordinates back from JSON string for polygons
-        const area = {
+        
+        console.log('Loading area data:', data);
+        
+        let geometry = data.geometry;
+        
+        // Parse polygon coordinates back from JSON string
+        if (data.geometry?.type === 'Polygon' && typeof data.geometry.coordinates === 'string') {
+          try {
+            geometry = {
+              ...data.geometry,
+              coordinates: JSON.parse(data.geometry.coordinates)
+            };
+          } catch (e) {
+            console.error('Error parsing polygon coordinates:', e);
+            return; // Skip this area if coordinates can't be parsed
+          }
+        }
+        
+        // Skip areas with empty coordinates
+        if (!geometry?.coordinates || 
+            (Array.isArray(geometry.coordinates) && geometry.coordinates.length === 0)) {
+          console.warn('Skipping area with empty coordinates:', doc.id);
+          return;
+        }
+        
+        const area: FloodRiskArea = {
           id: doc.id,
           ...data,
-          geometry: {
-            ...data.geometry,
-            coordinates: data.geometry.type === 'Polygon' && typeof data.geometry.coordinates === 'string'
-              ? JSON.parse(data.geometry.coordinates)
-              : data.geometry.coordinates
-          }
-        } as FloodRiskArea;
+          geometry
+        };
+        
         areas.push(area);
       });
+      
+      console.log('Loaded areas with valid coordinates:', areas.length);
       setFloodRiskAreas(areas);
     } catch (error) {
       console.error('Error loading flood risk areas:', error);
@@ -284,16 +306,18 @@ function App() {
   // Save flood risk area to Firebase
   const saveFloodRiskArea = useCallback(async (area: Omit<FloodRiskArea, 'id' | 'createdAt'>) => {
     try {
-      // Serialize polygon coordinates for Firestore compatibility
-      const areaToSave = {
-        ...area,
-        geometry: {
+      // Ensure coordinates are properly saved
+      const areaToSave = { ...area };
+      
+      // For Polygon types, we need to stringify the coordinates for Firestore
+      if (area.geometry.type === 'Polygon') {
+        areaToSave.geometry = {
           ...area.geometry,
-          coordinates: area.geometry.type === 'Polygon' 
-            ? JSON.stringify(area.geometry.coordinates)
-            : area.geometry.coordinates
-        }
-      };
+          coordinates: JSON.stringify(area.geometry.coordinates)
+        };
+      }
+      
+      console.log('Saving area with geometry:', areaToSave.geometry);
       
       const docRef = await addDoc(collection(db, 'floodRiskAreas'), {
         ...areaToSave,
