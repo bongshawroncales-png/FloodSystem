@@ -69,14 +69,8 @@ const defaultSettings: SystemSettings = {
 
 export const SystemSettingsPage: React.FC<SystemSettingsPageProps> = ({ onBack }) => {
   const { user, userRole } = useAuth();
-  const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [activeTab, setActiveTab] = useState<'monitoring' | 'notifications' | 'map' | 'data' | 'security' | 'system'>('monitoring');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Check if user is admin
+  // Check if user is admin - must be done before any other hooks
   if (userRole !== 'admin') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
@@ -96,6 +90,13 @@ export const SystemSettingsPage: React.FC<SystemSettingsPageProps> = ({ onBack }
       </div>
     );
   }
+
+  const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [activeTab, setActiveTab] = useState<'monitoring' | 'notifications' | 'map' | 'data' | 'security' | 'system'>('monitoring');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
     const loadSettings = async () => {
