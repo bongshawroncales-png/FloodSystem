@@ -25,6 +25,7 @@ import { useAuth } from './hooks/useAuth';
 import { WeatherPanel } from './components/WeatherPanel';
 import { LiveRiskMonitor } from './components/LiveRiskMonitor';
 import { AuthPage } from './components/AuthPage';
+import { AdminPage } from './components/AdminPage';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 
@@ -192,8 +193,9 @@ const RISK_COLORS = {
 };
 
 function App() {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [showAuthPage, setShowAuthPage] = useState(false);
+  const [showAdminPage, setShowAdminPage] = useState(false);
   const [viewState, setViewState] = useState<ViewState>({
     longitude: 125.375,
     latitude: 12.1116,
@@ -442,6 +444,12 @@ function App() {
 
   // Delete flood risk area
   const deleteFloodRiskArea = useCallback(async (areaId: string) => {
+    // Check if user has permission to delete
+    if (userRole !== 'admin' && userRole !== 'authorized') {
+      alert('You need authorization privileges to delete areas. Please contact an administrator.');
+      return;
+    }
+    
     try {
       await deleteDoc(doc(db, 'floodRiskAreas', areaId));
       loadFloodRiskAreas();
@@ -449,17 +457,23 @@ function App() {
       console.error('Error deleting flood risk area:', error);
       alert('Failed to delete risk area. Please try again.');
     }
-  }, [loadFloodRiskAreas]);
+  }, [loadFloodRiskAreas, userRole]);
 
   // Handle drawing tool selection
   const handleDrawingTool = useCallback((tool: 'marker' | 'polygon' | 'delete') => {
+    // Check if user has permission to draw
+    if (userRole !== 'admin' && userRole !== 'authorized') {
+      alert('You need authorization privileges to use drawing tools. Please contact an administrator.');
+      return;
+    }
+    
     setDrawingState({
       isDrawing: true,
       currentTool: drawingState.currentTool === tool ? null : tool,
       pendingGeometry: null
     });
     setPolygonPoints([]);
-  }, [drawingState.currentTool]);
+  }, [drawingState.currentTool, userRole]);
 
   // Handle map click for drawing
   const handleMapClick = useCallback((event: any) => {
@@ -656,6 +670,11 @@ function App() {
   // Show auth page if not authenticated
   if (showAuthPage) {
     return <AuthPage onBack={() => setShowAuthPage(false)} />;
+  }
+
+  // Show admin page if requested
+  if (showAdminPage) {
+    return <AdminPage onBack={() => setShowAdminPage(false)} />;
   }
 
   return (
@@ -878,6 +897,7 @@ function App() {
         onAreaDelete={deleteFloodRiskArea}
         isDarkTheme={isDarkTheme}
         onShowAuth={() => setShowAuthPage(true)}
+        onShowAdmin={() => setShowAdminPage(true)}
       />
 
       {/* Top Right Panel - Map Controls */}
@@ -954,6 +974,7 @@ function App() {
           <LiveRiskMonitor 
             onRiskAreasUpdate={loadFloodRiskAreas}
             isDarkTheme={isDarkTheme}
+            userRole={userRole}
           />
         </div>
       </div>
@@ -963,41 +984,51 @@ function App() {
         {/* Drawing Tools Panel */}
         <div className={`${panelClasses} p-3`}>
           <div className="flex flex-col gap-2">
-            <button
-              onClick={() => handleDrawingTool('marker')}
-              className={`p-2.5 rounded-lg text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
-                drawingState.currentTool === 'marker'
-                  ? (isDarkTheme ? 'bg-green-600/70 hover:bg-green-600/90' : 'bg-green-500/60 hover:bg-green-500/80')
-                  : `${buttonClasses} hover:bg-green-500/50`
-              }`}
-              title="Add Flood-Prone Point"
-            >
-              <MapPin className="w-4 h-4" />
-            </button>
-            
-            <button
-              onClick={() => handleDrawingTool('polygon')}
-              className={`p-2.5 rounded-lg text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
-                drawingState.currentTool === 'polygon'
-                  ? (isDarkTheme ? 'bg-purple-600/70 hover:bg-purple-600/90' : 'bg-purple-500/60 hover:bg-purple-500/80')
-                  : `${buttonClasses} hover:bg-purple-500/50`
-              }`}
-              title="Draw Flood-Prone Area"
-            >
-              <Square className="w-4 h-4" />
-            </button>
-            
-            <button
-              onClick={() => handleDrawingTool('delete')}
-              className={`p-2.5 rounded-lg text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
-                drawingState.currentTool === 'delete'
-                  ? (isDarkTheme ? 'bg-red-600/70 hover:bg-red-600/90' : 'bg-red-500/60 hover:bg-red-500/80')
-                  : `${buttonClasses} hover:bg-red-500/50`
-              }`}
-              title="Delete Flood-Prone Areas"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {(userRole === 'admin' || userRole === 'authorized') ? (
+              <>
+                <button
+                  onClick={() => handleDrawingTool('marker')}
+                  className={`p-2.5 rounded-lg text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
+                    drawingState.currentTool === 'marker'
+                      ? (isDarkTheme ? 'bg-green-600/70 hover:bg-green-600/90' : 'bg-green-500/60 hover:bg-green-500/80')
+                      : `${buttonClasses} hover:bg-green-500/50`
+                  }`}
+                  title="Add Flood-Prone Point"
+                >
+                  <MapPin className="w-4 h-4" />
+                </button>
+                
+                <button
+                  onClick={() => handleDrawingTool('polygon')}
+                  className={`p-2.5 rounded-lg text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
+                    drawingState.currentTool === 'polygon'
+                      ? (isDarkTheme ? 'bg-purple-600/70 hover:bg-purple-600/90' : 'bg-purple-500/60 hover:bg-purple-500/80')
+                      : `${buttonClasses} hover:bg-purple-500/50`
+                  }`}
+                  title="Draw Flood-Prone Area"
+                >
+                  <Square className="w-4 h-4" />
+                </button>
+                
+                <button
+                  onClick={() => handleDrawingTool('delete')}
+                  className={`p-2.5 rounded-lg text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
+                    drawingState.currentTool === 'delete'
+                      ? (isDarkTheme ? 'bg-red-600/70 hover:bg-red-600/90' : 'bg-red-500/60 hover:bg-red-500/80')
+                      : `${buttonClasses} hover:bg-red-500/50`
+                  }`}
+                  title="Delete Flood-Prone Areas"
+                >
+                    <Trash2 className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <div className={`p-3 rounded-lg ${isDarkTheme ? 'bg-gray-800/50' : 'bg-white/10'} text-center`}>
+                <p className={`${textClasses} text-xs opacity-75`}>
+                  Drawing tools require authorization privileges
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

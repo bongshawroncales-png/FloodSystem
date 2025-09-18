@@ -8,6 +8,7 @@ import { analyzeRisk, mapFloodRiskAreaToAnalysisData, mapRiskResultToFloodLevel 
 interface LiveRiskMonitorProps {
   onRiskAreasUpdate: () => void;
   isDarkTheme: boolean;
+  userRole: string;
 }
 
 // Mock weather simulation data
@@ -76,7 +77,8 @@ const fetchSimpleWeatherData = async (lat: number, lng: number) => {
 
 export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({ 
   onRiskAreasUpdate, 
-  isDarkTheme 
+  isDarkTheme,
+  userRole
 }) => {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -234,6 +236,7 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
 
   // Start/stop monitoring
   const toggleMonitoring = useCallback(() => {
+    // All users can run live risk monitor
     if (!hasApiKey && !isDemoMode) {
       alert('Cannot start monitoring: OpenWeatherMap API key not configured. Please add VITE_OPENWEATHER_API_KEY to your .env file.');
       return;

@@ -85,6 +85,50 @@ export interface DrawingState {
   pendingGeometry: any;
 }
 
+// User roles and permissions
+export type UserRole = 'admin' | 'authorized' | 'user';
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: string;
+  dateOfBirth?: string;
+  occupation?: string;
+  role: UserRole;
+  createdAt: string;
+  lastLogin?: string;
+  isActive: boolean;
+}
+
+export interface FloodIncident {
+  id?: string;
+  title: string;
+  description: string;
+  location: string;
+  coordinates: number[];
+  severity: 'Low' | 'Medium' | 'High' | 'Critical';
+  status: 'Pending' | 'Confirmed' | 'Resolved';
+  reportedBy: {
+    uid: string;
+    email: string;
+    displayName: string;
+  };
+  confirmedBy?: {
+    uid: string;
+    email: string;
+    displayName: string;
+  };
+  createdAt: string;
+  confirmedAt?: string;
+  resolvedAt?: string;
+  images?: string[];
+  affectedPopulation?: number;
+}
+
 // Keep the old FloodReport interface for backward compatibility
 export interface FloodReport {
   id?: string;

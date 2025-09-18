@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut } from 'lucide-react';
+import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut, Shield } from 'lucide-react';
 import { FloodRiskArea } from '../types';
 import { useAuth } from '../hooks/useAuth';
 
@@ -9,6 +9,7 @@ interface SidebarProps {
   onAreaDelete: (areaId: string) => void;
   isDarkTheme: boolean;
   onShowAuth: () => void;
+  onShowAdmin: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -16,10 +17,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAreaSelect,
   onAreaDelete,
   isDarkTheme,
-  onShowAuth
+  onShowAuth,
+  onShowAdmin
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, loading, signInWithGoogle, logout } = useAuth();
+  const { user, userRole, loading, signInWithGoogle, logout } = useAuth();
 
   const getRiskColor = (level: string) => {
     switch (level) {
@@ -124,6 +126,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <LogOut className="w-3 h-3" />
                   Sign Out
                 </button>
+                {userRole === 'admin' && (
+                  <button
+                    onClick={() => {
+                      onShowAdmin();
+                      setIsOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-600/80 hover:bg-red-600 rounded-lg text-white text-xs transition-colors`}
+                  >
+                    <Shield className="w-3 h-3" />
+                    Admin Panel
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-3">

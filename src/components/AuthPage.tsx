@@ -98,6 +98,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack }) => {
         address: registerData.address,
         dateOfBirth: registerData.dateOfBirth,
         occupation: registerData.occupation,
+        role: 'user', // Default role
+        isActive: true,
         createdAt: new Date().toISOString(),
         location: 'Oras, Eastern Samar'
       });
@@ -126,6 +128,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack }) => {
         address: '',
         dateOfBirth: '',
         occupation: '',
+        role: 'user', // Default role
+        isActive: true,
         createdAt: new Date().toISOString(),
         location: 'Oras, Eastern Samar',
         authProvider: 'google'
