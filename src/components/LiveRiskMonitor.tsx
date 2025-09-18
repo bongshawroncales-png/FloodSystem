@@ -11,14 +11,8 @@ interface LiveRiskMonitorProps {
 // Fetch current weather data for coordinates
 const fetchCurrentWeather = async (lat: number, lng: number) => {
   try {
-    // Check if API key is available
     if (!OPENWEATHER_API_KEY) {
-      throw new Error('OpenWeatherMap API key is not configured. Please check your .env file for VITE_OPENWEATHER_API_KEY.');
-    }
-    
-    // Validate API key format (should be 32 characters alphanumeric)
-    if (OPENWEATHER_API_KEY.length !== 32 || !/^[a-f0-9]{32}$/.test(OPENWEATHER_API_KEY)) {
-      console.warn('API key format may be invalid. Expected 32 character hexadecimal string.');
+      throw new Error('OpenWeatherMap API key not found. Please check your .env file.');
     }
     
     const response = await fetch(
@@ -26,14 +20,7 @@ const fetchCurrentWeather = async (lat: number, lng: number) => {
     );
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Weather API Error Details:', {
-        status: response.status,
-        statusText: response.statusText,
-        response: errorText,
-        url: response.url
-      });
-      throw new Error(`Weather API error: ${response.status} - ${response.statusText}. ${errorText}`);
+      throw new Error(`Weather API error: ${response.status}`);
     }
     
     const data = await response.json();
@@ -54,7 +41,7 @@ const fetchCurrentWeather = async (lat: number, lng: number) => {
 const fetchForecastWeather = async (lat: number, lng: number) => {
   try {
     if (!OPENWEATHER_API_KEY) {
-      throw new Error('OpenWeatherMap API key is not configured. Please check your .env file for VITE_OPENWEATHER_API_KEY.');
+      throw new Error('OpenWeatherMap API key not found. Please check your .env file.');
     }
     
     const response = await fetch(
@@ -62,14 +49,7 @@ const fetchForecastWeather = async (lat: number, lng: number) => {
     );
     
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Forecast API Error Details:', {
-        status: response.status,
-        statusText: response.statusText,
-        response: errorText,
-        url: response.url
-      });
-      throw new Error(`Forecast API error: ${response.status} - ${response.statusText}. ${errorText}`);
+      throw new Error(`Forecast API error: ${response.status}`);
     }
     
     const data = await response.json();
