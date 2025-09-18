@@ -52,11 +52,11 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
   location
 }) => {
   const [formData, setFormData] = useState<Omit<FloodRiskArea, 'id' | 'createdAt'>>({
-    coordinates: geometry?.coordinates || [],
+    coordinates: [],
     basicInfo: {
       name: '',
       type: 'residential' as AreaType,
-      coordinates: geometry?.coordinates || []
+      coordinates: []
     },
     physical: {
       elevation: 0,
@@ -103,8 +103,19 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
     },
     runPrediction: true,
     riskLevel: 'Low' as FloodLevel,
-    geometry: geometry || { type: 'Point', coordinates: [] }
+    geometry: {
+      type: geometry?.type || 'Point',
+      coordinates: geometry?.coordinates || []
+    }
   });
+
+  // Debug: Log the geometry when modal opens
+  useEffect(() => {
+    if (isOpen && geometry) {
+      console.log('Modal opened with geometry:', geometry);
+      console.log('Geometry coordinates:', geometry.coordinates);
+    }
+  }, [isOpen, geometry]);
 
   const [isLoadingWeather, setIsLoadingWeather] = useState(false);
   const [isLoadingElevation, setIsLoadingElevation] = useState(false);

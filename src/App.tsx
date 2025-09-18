@@ -356,15 +356,18 @@ function App() {
     if (!drawingState.currentTool) return;
 
     const { lng, lat } = event.lngLat;
+    console.log('Map clicked at coordinates:', lng, lat);
 
     if (drawingState.currentTool === 'marker') {
       const geometry = {
         type: 'Point' as const,
         coordinates: [lng, lat]
       };
+      console.log('Creating Point geometry:', geometry);
       setDrawingState(prev => ({ ...prev, pendingGeometry: geometry }));
     } else if (drawingState.currentTool === 'polygon') {
       // Add point to polygon
+      console.log('Adding point to polygon:', [lng, lat]);
       setPolygonPoints(prev => [...prev, [lng, lat]]);
     } else if (drawingState.currentTool === 'delete') {
       // Handle deletion of existing shapes
@@ -381,10 +384,12 @@ function App() {
   // Complete polygon drawing
   const completePolygon = useCallback(() => {
     if (polygonPoints.length >= 3) {
+      console.log('Completing polygon with points:', polygonPoints);
       const geometry = {
         type: 'Polygon' as const,
         coordinates: [[...polygonPoints, polygonPoints[0]]] // Close the polygon
       };
+      console.log('Created Polygon geometry:', geometry);
       setDrawingState(prev => ({ ...prev, pendingGeometry: geometry }));
       setPolygonPoints([]);
     }
@@ -392,6 +397,7 @@ function App() {
 
   // Handle risk area submission
   const handleRiskAreaSubmit = useCallback((area: Omit<FloodRiskArea, 'id' | 'createdAt'>) => {
+    console.log('Submitting risk area with geometry:', area.geometry);
     saveFloodRiskArea(area);
     setDrawingState({ isDrawing: false, currentTool: null, pendingGeometry: null });
     setShowRiskAreaModal(false);
