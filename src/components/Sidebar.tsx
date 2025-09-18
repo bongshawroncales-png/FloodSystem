@@ -73,21 +73,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
         isOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         {/* Header */}
-        <div className={`p-4 border-b ${isDarkTheme ? 'border-gray-700/50' : 'border-gray-200/50'}`}>
+        <div className={`p-4 border-b ${isDarkTheme ? 'border-gray-700/50' : 'border-gray-200/50'} space-y-4`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${isDarkTheme ? 'bg-blue-600/20' : 'bg-blue-500/20'}`}>
                 <MapPin className="w-5 h-5 text-blue-400" />
               </div>
-              <h1 className={`${textClasses} font-semibold text-lg tracking-tight`}>
-                Oras Flood Risk System
-              </h1>
+              <div>
+                <h1 className={`${textClasses} font-semibold text-lg tracking-tight`}>
+                  Oras Flood Risk
+                </h1>
+                <p className={`${textClasses} opacity-75 text-xs`}>
+                  Eastern Samar
+                </p>
+              </div>
             </div>
             <button
               onClick={() => setIsOpen(false)}
               className={`p-1.5 ${buttonClasses} rounded-lg transition-colors`}
             >
               <X className={`w-4 h-4 ${textClasses}`} />
+            </button>
+          </div>
+
+          {/* Navigation Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                onShowIncidents();
+                setIsOpen(false);
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 ${buttonClasses} rounded-lg ${textClasses} text-xs transition-colors hover:bg-blue-500/30`}
+            >
+              <FileText className="w-3 h-3" />
+              Flood Records
             </button>
           </div>
 

@@ -923,6 +923,7 @@ function App() {
         isDarkTheme={isDarkTheme}
         onShowAuth={() => setShowAuthPage(true)}
         onShowAdmin={() => setShowAdminPage(true)}
+        onShowIncidents={() => setShowIncidentsPage(true)}
       />
 
       {/* Top Right Panel - Map Controls */}
