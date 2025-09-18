@@ -667,7 +667,18 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
                           <input
                             type="checkbox"
                             checked={formData.hydrological.floodHistory.impacts.includes(impact)}
-                            onChange={(e) => handleArrayFieldChange('hydrological', 'floodHistory', impact, e.target.checked)}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              hydrological: {
+                                ...prev.hydrological,
+                                floodHistory: {
+                                  ...prev.hydrological.floodHistory,
+                                  impacts: e.target.checked
+                                    ? [...(prev.hydrological.floodHistory.impacts || []), impact]
+                                    : (prev.hydrological.floodHistory.impacts || []).filter(item => item !== impact)
+                                }
+                              }
+                            }))}
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
                           <span className="text-sm text-gray-700">{impact}</span>
