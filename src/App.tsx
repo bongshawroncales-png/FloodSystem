@@ -25,6 +25,7 @@ import { FloodIncidentModal } from './components/FloodIncidentModal';
 import { Sidebar } from './components/Sidebar';
 import { FloodIncidentsPage } from './components/FloodIncidentsPage';
 import { AnalyticsPage } from './components/AnalyticsPage';
+import { SystemSettingsPage } from './components/SystemSettingsPage';
 import { useAuth } from './hooks/useAuth';
 import { WeatherPanel } from './components/WeatherPanel';
 import { LiveRiskMonitor } from './components/LiveRiskMonitor';
@@ -204,6 +205,7 @@ function App() {
   const [showAdminPage, setShowAdminPage] = useState(false);
   const [showIncidentsPage, setShowIncidentsPage] = useState(false);
   const [showAnalyticsPage, setShowAnalyticsPage] = useState(false);
+  const [showSettingsPage, setShowSettingsPage] = useState(false);
   const [viewState, setViewState] = useState<ViewState>({
     longitude: 125.375,
     latitude: 12.1116,
@@ -752,6 +754,11 @@ function App() {
   if (showAnalyticsPage) {
     return <AnalyticsPage onBack={() => setShowAnalyticsPage(false)} />;
   }
+
+  // Show settings page if requested
+  if (showSettingsPage) {
+    return <SystemSettingsPage onBack={() => setShowSettingsPage(false)} />;
+  }
   return (
     <div className="relative w-full h-screen overflow-hidden">
       <Map
@@ -980,6 +987,7 @@ function App() {
         onShowAdmin={() => setShowAdminPage(true)}
         onShowIncidents={() => setShowIncidentsPage(true)}
         onShowAnalytics={() => setShowAnalyticsPage(true)}
+        onShowSettings={() => setShowSettingsPage(true)}
       />
 
       {/* Top Right Panel - Map Controls */}

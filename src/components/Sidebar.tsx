@@ -13,6 +13,7 @@ interface SidebarProps {
   onShowAdmin: () => void;
   onShowIncidents: () => void;
   onShowAnalytics: () => void;
+  onShowSettings: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -24,6 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onShowAdmin,
   onShowIncidents,
   onShowAnalytics,
+  onShowSettings,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -124,7 +126,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'settings',
       label: 'System Settings',
       icon: Settings,
-      action: () => setActiveSection('settings')
+      action: () => {
+        onShowSettings();
+        setIsOpen(false);
+      }
     }
   ];
 
@@ -186,11 +191,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeSection === item.id;
+                const isActive = activeSection === item.id;
                 return (
                   <button
                     key={item.id}
                     onClick={item.action}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
                       isActive
                         ? 'bg-blue-50 text-blue-700 border border-blue-200'
                         : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
