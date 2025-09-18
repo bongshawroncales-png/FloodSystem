@@ -843,6 +843,10 @@ function App() {
                 Flood-Prone Areas: {floodRiskAreas.length}
               </p>
             </div>
+          </div>
+        </div>
+      </div>
+
       {(showWeather || showFlood) && (
         <div className="absolute top-20 right-4 z-10">
           <div className={`${panelClasses} p-3`}>
