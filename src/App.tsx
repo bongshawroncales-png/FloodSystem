@@ -21,7 +21,6 @@ import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
 import { FloodRiskAreaPopup } from './components/FloodRiskAreaPopup';
 import { HoverTooltip } from './components/HoverTooltip';
 import { WeatherPanel } from './components/WeatherPanel';
-import { LiveRiskMonitor } from './components/LiveRiskMonitor';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 
@@ -214,12 +213,6 @@ function App() {
   const [hoverTooltipPosition, setHoverTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const mapRef = useRef<any>(null);
 
-  // Handle live risk updates
-  const handleRiskUpdate = useCallback((areaId: string, newRiskLevel: FloodLevel) => {
-    setFloodRiskAreas(prev => prev.map(area => 
-      area.id === areaId ? { ...area, riskLevel: newRiskLevel } : area
-    ));
-  }, []);
 
   // Center coordinates for Oras, Eastern Samar
   const CENTER_LAT = 12.1113;
@@ -705,9 +698,6 @@ function App() {
           </div>
         </div>
       </div>
-
-      {/* Live Risk Monitor */}
-      <LiveRiskMonitor onRiskUpdate={handleRiskUpdate} />
 
       {/* Top Right Panel - Map Controls */}
       <div className="absolute top-4 right-4 z-10">
