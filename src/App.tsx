@@ -289,10 +289,12 @@ function App() {
   useEffect(() => {
     if (!mapRef.current || floodRiskAreas.length === 0) return;
 
-    const map = mapRef.current.getMap();
-    if (!map) return;
-
     const animationInterval = setInterval(() => {
+      // Get the map instance inside the callback to ensure it's current
+      if (!mapRef.current) return;
+      const map = mapRef.current.getMap();
+      if (!map) return;
+
       // Update the GeoJSON data source to trigger re-rendering with new animation time
       const source = map.getSource('flood-risk-areas');
       if (source && source.type === 'geojson') {
