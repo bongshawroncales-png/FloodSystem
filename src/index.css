@@ -74,6 +74,18 @@
   animation: pulse-yellow 2s infinite;
 }
 
+/* Enhanced animations for map elements */
+.high-risk-area {
+  animation: flash-orange 1.5s infinite, gentle-shake 2s infinite;
+}
+
+.severe-risk-area {
+  animation: flash-red 1s infinite, intense-shake 1.5s infinite;
+}
+
+.moderate-risk-area {
+  animation: pulse-yellow 2s infinite;
+}
 /* Map layer animations - applied via CSS classes */
 .maplibregl-layer.severe-risk-flash {
   animation: flash-red 1s infinite, intense-shake 1.5s infinite;

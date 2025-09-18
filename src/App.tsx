@@ -278,6 +278,40 @@ function App() {
       });
     }
   }, []);
+
+  // Apply CSS animations to map layers based on risk levels
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const map = mapRef.current.getMap();
+    if (!map) return;
+
+    // Apply animations to high and severe risk areas
+    floodRiskAreas.forEach(area => {
+      const layerIds = area.geometry.type === 'Point' 
+        ? ['flood-risk-areas-circle-animated', 'flood-risk-areas-circle-moderate']
+        : ['flood-risk-areas-fill-animated'];
+
+      layerIds.forEach(layerId => {
+        const layer = map.getLayer(layerId);
+        if (layer) {
+          const canvas = map.getCanvas();
+          if (area.riskLevel === 'Severe') {
+            canvas.classList.add('severe-risk-area');
+            canvas.classList.remove('high-risk-area', 'moderate-risk-area');
+          } else if (area.riskLevel === 'High') {
+            canvas.classList.add('high-risk-area');
+            canvas.classList.remove('severe-risk-area', 'moderate-risk-area');
+          } else if (area.riskLevel === 'Moderate') {
+            canvas.classList.add('moderate-risk-area');
+            canvas.classList.remove('severe-risk-area', 'high-risk-area');
+          } else {
+            canvas.classList.remove('severe-risk-area', 'high-risk-area', 'moderate-risk-area');
+          }
+        }
+      });
+    });
+  }, [floodRiskAreas]);
   const handleZoomIn = useCallback(() => {
     setViewState(prev => ({ ...prev, zoom: Math.min(prev.zoom + 1, 20) }));
   }, []);
@@ -624,13 +658,6 @@ function App() {
             layout={{
               'visibility': 'visible'
             }}
-            className={[
-              'case',
-              ['get', 'isSevereRisk'], 'severe-risk-flash',
-              ['get', 'isHighRisk'], 'high-risk-flash',
-              ['get', 'isModerateRisk'], 'moderate-risk-pulse',
-              ''
-            ]}
           />
           {/* High-risk point overlay for animations */}
           <Layer
@@ -639,11 +666,38 @@ function App() {
             filter={['all', ['==', ['geometry-type'], 'Point'], ['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]]}
             paint={{
               'circle-color': ['get', 'color'],
-              'circle-radius': 22,
-              'circle-opacity': 0.3,
+              'circle-radius': [
+                'case',
+                ['get', 'isSevereRisk'], 25,
+                ['get', 'isHighRisk'], 23,
+                22
+              ],
+              'circle-opacity': [
+                'case',
+                ['get', 'isSevereRisk'], 0.4,
+                ['get', 'isHighRisk'], 0.3,
+                0.2
+              ],
               'circle-stroke-color': ['get', 'color'],
               'circle-stroke-width': 2,
               'circle-stroke-opacity': 0.6
+            }}
+            layout={{
+              'visibility': 'visible'
+            }}
+          />
+          {/* Moderate risk point pulse overlay */}
+          <Layer
+            id="flood-risk-areas-circle-moderate"
+            type="circle"
+            filter={['all', ['==', ['geometry-type'], 'Point'], ['get', 'isModerateRisk']]}
+            paint={{
+              'circle-color': ['get', 'color'],
+              'circle-radius': 22,
+              'circle-opacity': 0.2,
+              'circle-stroke-color': ['get', 'color'],
+              'circle-stroke-width': 1,
+              'circle-stroke-opacity': 0.4
             }}
             layout={{
               'visibility': 'visible'
@@ -662,6 +716,24 @@ function App() {
                 ['get', 'isHighRisk'], 0.5,
                 ['get', 'isModerateRisk'], 0.4,
                 0.3
+              ]
+            }}
+            layout={{
+              'visibility': 'visible'
+            }}
+          />
+          {/* Polygon animated overlay for high/severe risk */}
+          <Layer
+            id="flood-risk-areas-fill-animated"
+            type="fill"
+            filter={['all', ['==', ['geometry-type'], 'Polygon'], ['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]]}
+            paint={{
+              'fill-color': ['get', 'color'],
+              'fill-opacity': [
+                'case',
+                ['get', 'isSevereRisk'], 0.3,
+                ['get', 'isHighRisk'], 0.2,
+                0.1
               ]
             }}
             layout={{
