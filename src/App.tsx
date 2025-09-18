@@ -19,6 +19,7 @@ import { db } from './firebase';
 import { FloodLevel, DrawingState, FloodRiskArea } from './types';
 import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
 import { FloodRiskAreaPopup } from './components/FloodRiskAreaPopup';
+import { HoverTooltip } from './components/HoverTooltip';
 import { WeatherPanel } from './components/WeatherPanel';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
@@ -885,6 +886,14 @@ function App() {
             setSelectedRiskArea(null);
             setRiskAreaPopupPosition(null);
           }}
+        />
+      )}
+
+      {/* Hover Tooltip */}
+      {hoveredRiskArea && hoverTooltipPosition && (
+        <HoverTooltip
+          area={hoveredRiskArea}
+          position={hoverTooltipPosition}
         />
       )}
     </div>
