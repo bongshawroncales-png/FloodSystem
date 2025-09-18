@@ -64,8 +64,8 @@ const getWeatherIcon = (main: string, description: string) => {
 
 const fetchWeatherData = async (lat: number, lng: number): Promise<WeatherData | null> => {
   try {
-    // Using One Call API 3.0 (free tier allows 1000 calls/day)
-    const url = `${OPENWEATHER_BASE_URL}/onecall?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric&exclude=minutely,hourly,alerts`;
+    // Using One Call API 2.5 (free tier allows 1000 calls/day)
+    const url = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric&exclude=minutely,hourly,alerts`;
     
     const response = await fetch(url);
     if (!response.ok) {
