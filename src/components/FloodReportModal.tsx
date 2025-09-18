@@ -90,6 +90,10 @@ export const FloodReportModal: React.FC<FloodReportModalProps> = ({
     notes: ''
   });
 
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const riskLevel = calculateRiskLevel(
     formData.waterDepth,
     formData.waterFlowSpeed,
@@ -99,29 +103,17 @@ export const FloodReportModal: React.FC<FloodReportModalProps> = ({
 
   const handleWaterAppearanceChange = (appearance: WaterAppearance, checked: boolean) => {
     if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        waterAppearance: [...prev.waterAppearance, appearance]
-      }));
+      handleInputChange('waterAppearance', [...formData.waterAppearance, appearance]);
     } else {
-      setFormData(prev => ({
-        ...prev,
-        waterAppearance: prev.waterAppearance.filter(a => a !== appearance)
-      }));
+      handleInputChange('waterAppearance', formData.waterAppearance.filter(a => a !== appearance));
     }
   };
 
   const handleInfrastructureChange = (infrastructure: string, checked: boolean) => {
     if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        affectedInfrastructure: [...prev.affectedInfrastructure, infrastructure]
-      }));
+      handleInputChange('affectedInfrastructure', [...formData.affectedInfrastructure, infrastructure]);
     } else {
-      setFormData(prev => ({
-        ...prev,
-        affectedInfrastructure: prev.affectedInfrastructure.filter(i => i !== infrastructure)
-      }));
+      handleInputChange('affectedInfrastructure', formData.affectedInfrastructure.filter(i => i !== infrastructure));
     }
   };
 
@@ -184,7 +176,7 @@ export const FloodReportModal: React.FC<FloodReportModalProps> = ({
                 <input
                   type="text"
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
@@ -198,7 +190,7 @@ export const FloodReportModal: React.FC<FloodReportModalProps> = ({
                 <input
                   type="datetime-local"
                   value={formData.dateTime}
-                  onChange={(e) => setFormData({ ...formData, dateTime: e.target.value })}
+                  onChange={(e) => handleInputChange('dateTime', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
@@ -220,7 +212,7 @@ export const FloodReportModal: React.FC<FloodReportModalProps> = ({
                 </label>
                 <select
                   value={formData.waterDepth}
-                  onChange={(e) => setFormData({ ...formData, waterDepth: e.target.value as WaterDepth })}
+                  onChange={(e) => handleInputChange('waterDepth', e.target.value as WaterDepth)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
@@ -237,7 +229,7 @@ export const FloodReportModal: React.FC<FloodReportModalProps> = ({
                 </label>
                 <select
                   value={formData.waterFlowSpeed}
-                  onChange={(e) => setFormData({ ...formData, waterFlowSpeed: e.target.value as WaterFlowSpeed })}
+                  onChange={(e) => handleInputChange('waterFlowSpeed', e.target.value as WaterFlowSpeed)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
@@ -302,7 +294,7 @@ export const FloodReportModal: React.FC<FloodReportModalProps> = ({
               </label>
               <select
                 value={formData.accessLevel}
-                onChange={(e) => setFormData({ ...formData, accessLevel: e.target.value as AccessLevel })}
+                onChange={(e) => handleInputChange('accessLevel', e.target.value as AccessLevel)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               >
@@ -317,7 +309,7 @@ export const FloodReportModal: React.FC<FloodReportModalProps> = ({
                 <input
                   type="checkbox"
                   checked={formData.casualtiesReported}
-                  onChange={(e) => setFormData({ ...formData, casualtiesReported: e.target.checked })}
+                  onChange={(e) => handleInputChange('casualtiesReported', e.target.checked)}
                   className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                 />
                 <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
@@ -346,7 +338,7 @@ export const FloodReportModal: React.FC<FloodReportModalProps> = ({
               </label>
               <textarea
                 value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                onChange={(e) => handleInputChange('notes', e.target.value)}
                 rows={4}
                 maxLength={500}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
