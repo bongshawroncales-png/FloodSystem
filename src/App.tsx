@@ -444,6 +444,12 @@ function App() {
   // Debug: Log the GeoJSON data to console
   console.log('floodRiskAreasGeoJSON:', floodRiskAreasGeoJSON);
   console.log('floodRiskAreas state:', floodRiskAreas);
+  console.log('GeoJSON features:', floodRiskAreasGeoJSON.features);
+  floodRiskAreasGeoJSON.features.forEach((feature, index) => {
+    console.log(`Feature ${index}:`, feature);
+    console.log(`Feature ${index} geometry:`, feature.geometry);
+    console.log(`Feature ${index} coordinates:`, feature.geometry.coordinates);
+  });
 
   const isDarkTheme = currentLayer === 'streets' || currentLayer === 'terrain' || currentLayer === 'topographic';
   const panelClasses = isDarkTheme 
@@ -506,7 +512,7 @@ function App() {
             filter={['==', ['geometry-type'], 'Polygon']}
             paint={{
               'fill-color': ['get', 'color'],
-              'fill-opacity': 0.2
+              'fill-opacity': 0.6
             }}
           />
           {/* Polygon outline layer */}
@@ -516,8 +522,8 @@ function App() {
             filter={['==', ['geometry-type'], 'Polygon']}
             paint={{
               'line-color': ['get', 'color'],
-              'line-width': 3,
-              'line-opacity': 0.9
+              'line-width': 4,
+              'line-opacity': 1.0
             }}
           />
           {/* Point/marker layer */}
@@ -527,10 +533,10 @@ function App() {
             filter={['==', ['geometry-type'], 'Point']}
             paint={{
               'circle-color': ['get', 'color'],
-              'circle-radius': 10,
+              'circle-radius': 15,
               'circle-stroke-color': '#ffffff',
-              'circle-stroke-width': 3,
-              'circle-opacity': 0.8
+              'circle-stroke-width': 4,
+              'circle-opacity': 1.0
             }}
           />
           {/* Labels layer */}
@@ -539,15 +545,15 @@ function App() {
             type="symbol"
             layout={{
               'text-field': ['get', 'name'],
-              'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
-              'text-size': 12,
+              'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+              'text-size': 14,
               'text-offset': [0, 1],
               'text-anchor': 'top'
             }}
             paint={{
               'text-color': '#ffffff',
               'text-halo-color': '#000000',
-              'text-halo-width': 2
+              'text-halo-width': 3
             }}
           />
         </Source>
