@@ -211,8 +211,8 @@ function App() {
   const mapRef = useRef<any>(null);
 
   // Center coordinates for Oras, Eastern Samar
-  const CENTER_LAT = 12.1116;
-  const CENTER_LNG = 125.3575;
+  const CENTER_LAT = 12.1113;
+  const CENTER_LNG = 125.3756;
   const MAX_RADIUS_KM = 3; // 3 kilometers radius limit
 
   // Function to calculate distance between two coordinates in kilometers
