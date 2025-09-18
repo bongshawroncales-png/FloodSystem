@@ -190,7 +190,7 @@ function App() {
   const [viewState, setViewState] = useState<ViewState>({
     longitude: 125.375,
     latitude: 12.1116,
-    zoom: 12,
+    zoom: 17,
     bearing: 0,
     pitch: 0,
     padding: { top: 0, bottom: 0, left: 0, right: 0 }
