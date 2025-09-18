@@ -689,8 +689,215 @@ const IncidentDetailsView: React.FC<{ incident: FloodIncident; showEditHistory: 
   };
 
   return (
-    <div className="space-y-6">
-      {/* Basic Information */}
+    <div className="space-y-6 max-h-96 overflow-y-auto modal-scrollbar">
+      {/* Core Incident Details */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-800 border-b border-gray-200 pb-2">📍 Core Incident Details</h3>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Incident ID</label>
+            <p className="text-gray-600">{incident.incidentId || incident.id}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <p className="text-gray-600">{incident.title}</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Barangay</label>
+            <p className="text-gray-600">{incident.barangay || 'Not specified'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Municipality</label>
+            <p className="text-gray-600">{incident.municipality || 'Not specified'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Province</label>
+            <p className="text-gray-600">{incident.province || 'Not specified'}</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Onset Date/Time</label>
+            <p className="text-gray-600">{incident.onsetDateTime ? new Date(incident.onsetDateTime).toLocaleString() : 'Not specified'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">End Date/Time</label>
+            <p className="text-gray-600">{incident.endDateTime ? new Date(incident.endDateTime).toLocaleString() : 'Not specified'}</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cause/Trigger</label>
+            <p className="text-gray-600">{incident.cause || 'Not specified'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Flood Depth</label>
+            <p className="text-gray-600">{incident.floodDepth ? `${incident.floodDepth}m` : 'Not measured'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+            <p className="text-gray-600">{incident.duration || 'Not specified'}</p>
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Area Extent</label>
+          <p className="text-gray-600">{incident.areaExtent || 'Not specified'}</p>
+        </div>
+      </div>
+      
+      {/* Human Impact */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-800 border-b border-gray-200 pb-2">👥 Human Impact</h3>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Population Affected</label>
+            <p className="text-gray-600">{incident.affectedPopulation || 0}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Evacuated People</label>
+            <p className="text-gray-600">{incident.evacuatedPeople || 0}</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Dead</label>
+            <p className="text-gray-600">{incident.casualties?.dead || 0}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Missing</label>
+            <p className="text-gray-600">{incident.casualties?.missing || 0}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Injured</label>
+            <p className="text-gray-600">{incident.casualties?.injured || 0}</p>
+          </div>
+        </div>
+        
+        {incident.vulnerableGroupsAffected && incident.vulnerableGroupsAffected.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Vulnerable Groups Affected</label>
+            <div className="flex flex-wrap gap-1">
+              {incident.vulnerableGroupsAffected.map((group, index) => (
+                <span key={index} className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
+                  {group}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Property & Infrastructure Impact */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-800 border-b border-gray-200 pb-2">🏠 Property & Infrastructure Impact</h3>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Houses Damaged</label>
+            <p className="text-gray-600">{incident.housesDamaged || 0}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Houses Destroyed</label>
+            <p className="text-gray-600">{incident.housesDestroyed || 0}</p>
+          </div>
+        </div>
+        
+        {incident.infrastructureAffected && incident.infrastructureAffected.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Infrastructure Affected</label>
+            <div className="flex flex-wrap gap-1">
+              {incident.infrastructureAffected.map((infra, index) => (
+                <span key={index} className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
+                  {infra}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {incident.agricultureLosses && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Agriculture & Livelihood Losses</label>
+            <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{incident.agricultureLosses}</p>
+          </div>
+        )}
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Economic Damages</label>
+          <p className="text-gray-600">{incident.economicDamages ? `₱${incident.economicDamages.toLocaleString()}` : 'Not assessed'}</p>
+        </div>
+      </div>
+      
+      {/* Environmental & Weather Context */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-800 border-b border-gray-200 pb-2">🌧️ Environmental & Weather Context</h3>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rainfall Data</label>
+            <p className="text-gray-600">{incident.rainfallData || 'Not available'}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">River Level</label>
+            <p className="text-gray-600">{incident.riverLevel || 'Not monitored'}</p>
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Weather Event</label>
+          <p className="text-gray-600">{incident.weatherEvent || 'Not specified'}</p>
+        </div>
+      </div>
+      
+      {/* Response & Actions */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-800 border-b border-gray-200 pb-2">🚨 Response & Actions</h3>
+        
+        {incident.respondingAgencies && incident.respondingAgencies.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Responding Agencies</label>
+            <div className="flex flex-wrap gap-1">
+              {incident.respondingAgencies.map((agency, index) => (
+                <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                  {agency}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {incident.evacuationCenters && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Evacuation Centers</label>
+            <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{incident.evacuationCenters}</p>
+          </div>
+        )}
+        
+        {incident.reliefProvided && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Relief Provided</label>
+            <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{incident.reliefProvided}</p>
+          </div>
+        )}
+        
+        {incident.challengesEncountered && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Challenges Encountered</label>
+            <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{incident.challengesEncountered}</p>
+          </div>
+        )}
+      </div>
+      
+      {/* Status and Basic Information */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
@@ -711,15 +918,9 @@ const IncidentDetailsView: React.FC<{ incident: FloodIncident; showEditHistory: 
         <p className="text-gray-600 bg-gray-50 p-3 rounded-lg">{incident.description}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-          <p className="text-gray-600">{incident.location}</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Affected Population</label>
-          <p className="text-gray-600">{incident.affectedPopulation || 'Not specified'}</p>
-        </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">GPS Coordinates</label>
+        <p className="text-gray-600">{incident.gpsCoordinates || 'Not available'}</p>
       </div>
 
       <div>
