@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onShowAuth,
   onShowAdmin,
   onShowIncidents
-  onShowAnalytics
+  onShowAnalytics,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
