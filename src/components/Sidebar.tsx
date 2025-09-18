@@ -13,7 +13,6 @@ interface SidebarProps {
   onShowAdmin: () => void;
   onShowIncidents: () => void;
   onShowAnalytics: () => void;
-  onShowSettings: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -25,7 +24,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onShowAdmin,
   onShowIncidents,
   onShowAnalytics,
-  onShowSettings
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -126,10 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'settings',
       label: 'System Settings',
       icon: Settings,
-      action: () => {
-        onShowSettings();
-        setIsOpen(false);
-      }
+      action: () => setActiveSection('settings')
     }
   ];
 
