@@ -29,7 +29,7 @@ const SATELLITE_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
-  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+  glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
   sources: {
     satellite: {
       type: 'raster',
@@ -58,7 +58,7 @@ const STREET_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
-  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+  glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
   sources: {
     'osm-tiles': {
       type: 'raster',
@@ -87,7 +87,7 @@ const TERRAIN_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
-  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+  glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
   sources: {
     terrain: {
       type: 'raster',
@@ -116,7 +116,7 @@ const TOPO_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
-  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+  glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
   sources: {
     topo: {
       type: 'raster',
@@ -145,7 +145,7 @@ const DARK_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
-  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+  glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
   sources: {
     'carto-dark': {
       type: 'raster',
@@ -539,7 +539,7 @@ function App() {
             type="symbol"
             layout={{
               'text-field': ['get', 'name'],
-              'text-font': ['Open Sans Regular'],
+              'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
               'text-size': 12,
               'text-offset': [0, 1],
               'text-anchor': 'top'
