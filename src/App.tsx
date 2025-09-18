@@ -213,9 +213,9 @@ function App() {
   const [riskAreaPopupPosition, setRiskAreaPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [hoveredRiskArea, setHoveredRiskArea] = useState<FloodRiskArea | null>(null);
   const [hoverTooltipPosition, setHoverTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const [showLegend, setShowLegend] = useState(true);
   const mapRef = useRef<any>(null);
 
-  const [showLegend, setShowLegend] = useState(true);
 
   // Center coordinates for Oras, Eastern Samar
   const CENTER_LAT = 12.1113;
