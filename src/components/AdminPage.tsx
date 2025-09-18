@@ -4,6 +4,7 @@ import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from '
 import { db } from '../firebase';
 import { UserProfile, FloodIncident, UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import { ConfirmationModal } from './ConfirmationModal';
 
 interface AdminPageProps {
   onBack: () => void;
@@ -16,6 +17,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   const [incidents, setIncidents] = useState<FloodIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    incidentId: string;
+    incidentTitle: string;
+  }>({
+    isOpen: false,
+    incidentId: '',
+    incidentTitle: ''
+  });
 
   // Load users and incidents
   useEffect(() => {
@@ -126,8 +136,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   };
 
   const deleteIncident = async (incidentId: string) => {
-    if (!confirm('Are you sure you want to delete this incident?')) return;
-    
     try {
       await deleteDoc(doc(db, 'floodIncidents', incidentId));
       setIncidents(prev => prev.filter(incident => incident.id !== incidentId));
@@ -137,6 +145,22 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     }
   };
 
+  const handleDeleteClick = (incidentId: string, incidentTitle: string) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      incidentId,
+      incidentTitle
+    });
+  };
+
+  const handleDeleteConfirm = async () => {
+    await deleteIncident(deleteConfirmation.incidentId);
+    setDeleteConfirmation({
+      isOpen: false,
+      incidentId: '',
+      incidentTitle: ''
+    });
+  };
   const getRoleColor = (role: UserRole) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800 border-red-200';
@@ -418,7 +442,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                                 </button>
                               )}
                               <button
-                                onClick={() => deleteIncident(incident.id!)}
+                                onClick={() => handleDeleteClick(incident.id!, incident.title)}
                                 className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Delete Incident"
                               >
@@ -473,6 +497,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
           </>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, incidentId: '', incidentTitle: '' })}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Flood Incident"
+        message={`Are you sure you want to delete the incident "${deleteConfirmation.incidentTitle}"? This action cannot be undone and will permanently remove all incident data.`}
+        type="delete"
+        confirmText="Delete Incident"
+        cancelText="Keep Incident"
+      />
     </div>
   );
 };

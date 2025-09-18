@@ -4,6 +4,7 @@ import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from '
 import { db } from '../firebase';
 import { FloodIncident } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import { ConfirmationModal } from './ConfirmationModal';
 
 interface FloodIncidentsPageProps {
   onBack: () => void;
@@ -20,19 +21,32 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
   const [showEditHistory, setShowEditHistory] = useState(false);
   const [filterStatus, setFilterStatus] = useState<'All' | 'Pending' | 'Confirmed' | 'Resolved'>('All');
   const [filterSeverity, setFilterSeverity] = useState<'All' | 'Low' | 'Medium' | 'High' | 'Critical'>('All');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    incidentId: string;
+    incidentTitle: string;
+  }>({
+    isOpen: false,
+    incidentId: '',
+    incidentTitle: ''
+  });
 
   // Delete incident
-  const handleDeleteIncident = async (incidentId: string, incidentTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${incidentTitle}"? This action cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteClick = (incidentId: string, incidentTitle: string) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      incidentId,
+      incidentTitle
+    });
+  };
 
+  const handleDeleteConfirm = async () => {
     try {
-      await deleteDoc(doc(db, 'floodIncidents', incidentId));
-      setIncidents(prev => prev.filter(incident => incident.id !== incidentId));
+      await deleteDoc(doc(db, 'floodIncidents', deleteConfirmation.incidentId));
+      setIncidents(prev => prev.filter(incident => incident.id !== deleteConfirmation.incidentId));
       
       // Close modal if the deleted incident was selected
-      if (selectedIncident?.id === incidentId) {
+      if (selectedIncident?.id === deleteConfirmation.incidentId) {
         setSelectedIncident(null);
         setIsEditing(false);
       }
@@ -40,6 +54,12 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
       console.error('Error deleting incident:', error);
       alert('Failed to delete incident. Please try again.');
     }
+    
+    setDeleteConfirmation({
+      isOpen: false,
+      incidentId: '',
+      incidentTitle: ''
+    });
   };
 
   // Generate and download PDF report
@@ -596,7 +616,7 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
                           <Edit className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={() => handleDeleteIncident(incident.id!, incident.title)}
+                          onClick={() => handleDeleteClick(incident.id!, incident.title)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete Incident"
                         >
@@ -663,6 +683,18 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, incidentId: '', incidentTitle: '' })}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Flood Incident"
+        message={`Are you sure you want to delete the incident "${deleteConfirmation.incidentTitle}"? This action cannot be undone and will permanently remove all incident data including reports and documentation.`}
+        type="delete"
+        confirmText="Delete Incident"
+        cancelText="Keep Incident"
+      />
     </div>
   );
 };
