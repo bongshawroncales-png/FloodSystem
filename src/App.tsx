@@ -18,7 +18,6 @@ import { collection, addDoc, getDocs, deleteDoc, doc } from 'firebase/firestore'
 import { db } from './firebase';
 import { FloodReport, FloodLevel, DrawingState, FloodRiskArea } from './types';
 import { FloodReportModal } from './components/FloodReportModal';
-import { FloodReportPopup } from './components/FloodReportPopup';
 import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
@@ -196,6 +195,7 @@ function App() {
   const [currentLayer, setCurrentLayer] = useState<BasemapKey>('satellite');
   const [showBasemapMenu, setShowBasemapMenu] = useState(false);
   const [floodReports, setFloodReports] = useState<FloodReport[]>([]);
+  const [floodReports, setFloodReports] = useState<FloodReport[]>([]);
   const [floodRiskAreas, setFloodRiskAreas] = useState<FloodRiskArea[]>([]);
   const [drawingState, setDrawingState] = useState<DrawingState>({
     isDrawing: false,
@@ -204,8 +204,6 @@ function App() {
   });
   const [showReportModal, setShowReportModal] = useState(false);
   const [showRiskAreaModal, setShowRiskAreaModal] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<FloodReport | null>(null);
-  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const [polygonPoints, setPolygonPoints] = useState<number[][]>([]);
   const mapRef = useRef<any>(null);
 
@@ -249,6 +247,57 @@ function App() {
     setCurrentLayer(basemap);
     setShowBasemapMenu(false);
   }, []);
+
+  // Load flood reports from Firebase
+  const loadFloodReports = useCallback(async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'floodReports'));
+      const reports: FloodReport[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        // Parse geometry coordinates back from JSON string for polygons
+        const report = {
+          id: doc.id,
+          ...data,
+          geometry: {
+            ...data.geometry,
+            coordinates: data.geometry.type === 'Polygon' && typeof data.geometry.coordinates === 'string'
+              ? JSON.parse(data.geometry.coordinates)
+              : data.geometry.coordinates
+          }
+        } as FloodReport;
+        reports.push(report);
+      });
+      setFloodReports(reports);
+    } catch (error) {
+      console.error('Error loading flood reports:', error);
+    }
+  }, []);
+
+  // Save flood report to Firebase
+  const saveFloodReport = useCallback(async (report: Omit<FloodReport, 'id' | 'createdAt'>) => {
+    try {
+      // Serialize polygon coordinates for Firestore compatibility
+      const reportToSave = {
+        ...report,
+        geometry: {
+          ...report.geometry,
+          coordinates: report.geometry.type === 'Polygon' 
+            ? JSON.stringify(report.geometry.coordinates)
+            : report.geometry.coordinates
+        }
+      };
+      
+      const docRef = await addDoc(collection(db, 'floodReports'), {
+        ...reportToSave,
+        createdAt: new Date().toISOString()
+      });
+      loadFloodReports();
+    } catch (error) {
+      console.error('Error saving flood report:', error);
+      alert('Failed to save report. Please try again.');
+    }
+  }, [loadFloodReports]);
 
   // Load flood reports from Firebase
   const loadFloodReports = useCallback(async () => {
@@ -354,7 +403,17 @@ function App() {
       console.error('Error saving flood risk area:', error);
       alert('Failed to save risk area. Please try again.');
     }
-  }, [loadFloodRiskAreas]);
+
+  // Delete flood report
+  const deleteFloodReport = useCallback(async (reportId: string) => {
+    try {
+      await deleteDoc(doc(db, 'floodReports', reportId));
+      loadFloodReports();
+    } catch (error) {
+      console.error('Error deleting flood report:', error);
+      alert('Failed to delete report. Please try again.');
+    }
+  }, [loadFloodReports]);
 
   // Handle drawing tool selection
   const handleDrawingTool = useCallback((tool: 'marker' | 'polygon' | 'delete') => {
@@ -378,6 +437,7 @@ function App() {
         coordinates: [lng, lat]
       };
       setDrawingState(prev => ({ ...prev, pendingGeometry: geometry }));
+      setShowReportModal(true);
     } else if (drawingState.currentTool === 'polygon') {
       // Add point to polygon
       setPolygonPoints(prev => [...prev, [lng, lat]]);
@@ -385,6 +445,10 @@ function App() {
       // Handle deletion of existing shapes
       const features = mapRef.current?.queryRenderedFeatures(event.point);
       if (features && features.length > 0) {
+        const reportFeature = features.find((f: any) => f.source === 'flood-reports');
+        if (reportFeature && reportFeature.properties?.reportId) {
+          deleteFloodReport(reportFeature.properties.reportId);
+        }
         const feature = features.find((f: any) => f.source === 'flood-reports');
         if (feature && feature.properties?.reportId) {
           deleteFloodReport(feature.properties.reportId);
@@ -401,9 +465,9 @@ function App() {
         coordinates: [[...polygonPoints, polygonPoints[0]]] // Close the polygon
       };
       setDrawingState(prev => ({ ...prev, pendingGeometry: geometry }));
+      setShowReportModal(true);
       setPolygonPoints([]);
     }
-  }, [polygonPoints, drawingState]);
 
   // Delete flood report
   const deleteFloodReport = useCallback(async (reportId: string) => {
@@ -415,6 +479,14 @@ function App() {
       alert('Failed to delete report. Please try again.');
     }
   }, [loadFloodReports]);
+
+  // Handle report submission
+  const handleReportSubmit = useCallback((report: Omit<FloodReport, 'id' | 'createdAt'>) => {
+    saveFloodReport(report);
+    setDrawingState({ isDrawing: false, currentTool: null, pendingGeometry: null });
+    setShowReportModal(false);
+  }, [saveFloodReport]);
+  }, [polygonPoints]);
 
   // Handle report submission
   const handleReportSubmit = useCallback((report: Omit<FloodReport, 'id' | 'createdAt'>) => {
@@ -450,6 +522,7 @@ function App() {
   // Load reports on component mount
   useEffect(() => {
     loadFloodReports();
+    loadFloodReports();
     loadFloodRiskAreas();
   }, [loadFloodReports, loadFloodRiskAreas]);
 
@@ -461,6 +534,23 @@ function App() {
       properties: {
         reportId: report.id,
         riskLevel: report.riskLevel,
+        color: RISK_COLORS[report.riskLevel]
+      },
+      geometry: report.geometry
+    }))
+  };
+  }, [loadFloodReports, loadFloodRiskAreas]);
+
+  // Create GeoJSON data for flood reports
+  const floodReportsGeoJSON = {
+    type: 'FeatureCollection' as const,
+    features: floodReports.map(report => ({
+      type: 'Feature' as const,
+      properties: {
+        reportId: report.id,
+        riskLevel: report.riskLevel,
+        location: report.location,
+        waterDepth: report.waterDepth,
         color: RISK_COLORS[report.riskLevel]
       },
       geometry: report.geometry
@@ -535,6 +625,61 @@ function App() {
           }
         }}
       >
+        {/* Flood Reports Layer */}
+        <Source id="flood-reports" type="geojson" data={floodReportsGeoJSON}>
+          {/* Polygon fill layer */}
+          <Layer
+            id="flood-reports-fill"
+            type="fill"
+            filter={['==', ['geometry-type'], 'Polygon']}
+            paint={{
+              'fill-color': ['get', 'color'],
+              'fill-opacity': 0.4
+            }}
+          />
+          {/* Polygon outline layer */}
+          <Layer
+            id="flood-reports-outline"
+            type="line"
+            filter={['==', ['geometry-type'], 'Polygon']}
+            paint={{
+              'line-color': ['get', 'color'],
+              'line-width': 3,
+              'line-opacity': 0.9
+            }}
+          />
+          {/* Point/marker layer */}
+          <Layer
+            id="flood-reports-circle"
+            type="circle"
+            filter={['==', ['geometry-type'], 'Point']}
+            paint={{
+              'circle-color': ['get', 'color'],
+              'circle-radius': 8,
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 2,
+              'circle-opacity': 0.9
+            }}
+          />
+          {/* Labels for flood reports */}
+          <Layer
+            id="flood-reports-labels"
+            type="symbol"
+            layout={{
+              'text-field': ['get', 'waterDepth'],
+              'text-font': ['Open Sans Regular'],
+              'text-size': 12,
+              'text-offset': [0, 1.5],
+              'text-anchor': 'top'
+            }}
+            paint={{
+              'text-color': '#ffffff',
+              'text-halo-color': '#000000',
+              'text-halo-width': 1
+            }}
+          />
+        </Source>
+
         {/* Flood Risk Areas Layer */}
         <Source id="flood-risk-areas" type="geojson" data={floodRiskAreasGeoJSON}>
           {/* Polygon fill layer */}
@@ -829,6 +974,9 @@ function App() {
           {/* Risk Level Legend */}
           <div className={`pt-3 border-t ${isDarkTheme ? 'border-gray-600/50' : 'border-white/20'}`}>
             <h3 className={`${textClasses} text-sm font-semibold mb-2`}>Risk Levels</h3>
+            <p className={`${textClasses} text-xs mb-2 opacity-75`}>
+              Reports: {floodReports.length} | Areas: {floodRiskAreas.length}
+            </p>
             <div className="space-y-1">
               {Object.entries(RISK_COLORS).map(([level, color]) => (
                 <div key={level} className="flex items-center gap-2">
@@ -920,22 +1068,10 @@ function App() {
           setDrawingState({ isDrawing: false, currentTool: null, pendingGeometry: null });
           setPolygonPoints([]);
         }}
-        onSubmit={handleRiskAreaSubmit}
+        onSubmit={handleReportSubmit}
         geometry={drawingState.pendingGeometry}
         location={`${formatCoordinate(viewState.latitude, false)}, ${formatCoordinate(viewState.longitude, true)}`}
       />
-
-      {/* Flood Report Popup */}
-      {selectedReport && popupPosition && (
-        <FloodReportPopup
-          report={selectedReport}
-          position={popupPosition}
-          onClose={() => {
-            setSelectedReport(null);
-            setPopupPosition(null);
-          }}
-        />
-      )}
     </div>
   );
 }
