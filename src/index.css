@@ -3,26 +3,26 @@
 @tailwind utilities;
 
 /* Custom scrollbar styles */
-.custom-scrollbar::-webkit-scrollbar {
+.weather-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
+.weather-scrollbar::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
+.weather-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(59, 130, 246, 0.6);
   border-radius: 3px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+.weather-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(59, 130, 246, 0.8);
 }
 
 /* For Firefox */
-.custom-scrollbar {
+.weather-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(59, 130, 246, 0.6) rgba(255, 255, 255, 0.1);
 }

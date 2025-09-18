@@ -664,7 +664,7 @@ function App() {
 
       {/* Weather Panel - Separate positioning */}
       {showWeather && (
-        <div className="absolute top-4 right-4 z-20 pointer-events-none" style={{ transform: 'translateX(-100px)' }}>
+        <div className="absolute top-4 right-4 z-20 pointer-events-none" style={{ transform: 'translateX(-120px)' }}>
           <div className="pointer-events-auto">
             <WeatherPanel 
               coordinates={{ lat: viewState.latitude, lng: viewState.longitude }}

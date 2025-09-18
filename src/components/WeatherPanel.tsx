@@ -215,22 +215,28 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ coordinates, isDarkT
   };
 
   return (
-    <div className={`${panelClasses} w-80 transition-all duration-300 ${isCollapsed ? 'h-auto' : 'max-h-96 overflow-y-auto custom-scrollbar'}`}>
+    <div className={`${panelClasses} w-80 transition-all duration-300 ${isCollapsed ? 'h-auto' : 'max-h-96 overflow-y-auto weather-scrollbar'}`}>
       {/* Header */}
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className={`w-full p-4 flex items-center justify-between ${buttonClasses} rounded-xl transition-all duration-200`}
-      >
-        <div className="flex items-center gap-3">
-          <Cloud className="w-5 h-5 text-blue-400" />
-          <span className={`${textClasses} font-semibold`}>Weather Forecast</span>
+      <div className={`p-4 border-b ${isDarkTheme ? 'border-gray-700/50' : 'border-white/20'}`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${isDarkTheme ? 'bg-blue-600/20' : 'bg-blue-500/20'}`}>
+              <Cloud className="w-5 h-5 text-blue-400" />
+            </div>
+            <span className={`${textClasses} font-semibold text-lg`}>Weather Forecast</span>
+          </div>
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={`p-2 ${buttonClasses} rounded-lg transition-all duration-200 hover:scale-105`}
+          >
+            {isCollapsed ? (
+              <ChevronDown className={`w-4 h-4 ${textClasses}`} />
+            ) : (
+              <ChevronUp className={`w-4 h-4 ${textClasses}`} />
+            )}
+          </button>
         </div>
-        {isCollapsed ? (
-          <ChevronDown className={`w-4 h-4 ${textClasses}`} />
-        ) : (
-          <ChevronUp className={`w-4 h-4 ${textClasses}`} />
-        )}
-      </button>
+      </div>
 
       {/* Content */}
       {!isCollapsed && (
