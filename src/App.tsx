@@ -659,15 +659,15 @@ function App() {
                 'case',
                 ['get', 'isSevereRisk'], [
                   'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime', 0], 10]], 20], 10], 0.3, 1.0
+                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 10]], 20], 10], 0.3, 1.0
                 ],
                 ['get', 'isHighRisk'], [
                   'case', 
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime', 0], 6.67]], 20], 10], 0.4, 1.0
+                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 6.67]], 20], 10], 0.4, 1.0
                 ],
                 ['get', 'isModerateRisk'], [
                   'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime', 0], 5]], 20], 10], 0.6, 1.0
+                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 5]], 20], 10], 0.6, 1.0
                 ],
                 0.8
               ],
@@ -688,15 +688,15 @@ function App() {
                 'case',
                 ['get', 'isSevereRisk'], [
                   'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime', 0], 10]], 20], 10], 0.2, 0.7
+                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 10]], 20], 10], 0.2, 0.7
                 ],
                 ['get', 'isHighRisk'], [
                   'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime', 0], 6.67]], 20], 10], 0.2, 0.6
+                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 6.67]], 20], 10], 0.2, 0.6
                 ],
                 ['get', 'isModerateRisk'], [
                   'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime', 0], 5]], 20], 10], 0.3, 0.5
+                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 5]], 20], 10], 0.3, 0.5
                 ],
                 0.4
               ]
@@ -722,15 +722,15 @@ function App() {
                 'case',
                 ['get', 'isSevereRisk'], [
                   'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime', 0], 10]], 20], 10], 0.4, 1.0
+                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 10]], 20], 10], 0.4, 1.0
                 ],
                 ['get', 'isHighRisk'], [
                   'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime', 0], 6.67]], 20], 10], 0.4, 1.0
+                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 6.67]], 20], 10], 0.4, 1.0
                 ],
                 ['get', 'isModerateRisk'], [
                   'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime', 0], 5]], 20], 10], 0.5, 0.9
+                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 5]], 20], 10], 0.5, 0.9
                 ],
                 0.8
               ]
