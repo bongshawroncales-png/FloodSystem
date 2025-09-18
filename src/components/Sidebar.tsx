@@ -149,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Marked Areas List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto sidebar-scrollbar">
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className={`${textClasses} font-semibold text-sm`}>Marked Areas</h2>

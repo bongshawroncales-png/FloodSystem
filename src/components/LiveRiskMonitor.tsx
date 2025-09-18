@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Activity, Play, Pause, Clock, AlertTriangle } from 'lucide-react';
+import { Activity, Play, Pause, Clock, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db, OPENWEATHER_API_KEY } from '../firebase';
 import { FloodRiskArea } from '../types';
@@ -84,6 +84,7 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [updateCount, setUpdateCount] = useState(0);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Check API key availability on mount
   useEffect(() => {
@@ -287,7 +288,7 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
 
   return (
     <div className={`${panelClasses} w-80 p-4`}>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className={`p-2 rounded-lg ${isDarkTheme ? 'bg-green-600/20' : 'bg-green-500/20'}`}>
             <Activity className="w-4 h-4 text-green-400" />
@@ -312,10 +313,21 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
               <Play className={`w-3 h-3 ${textClasses}`} />
             )}
           </button>
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className={`p-1.5 ${buttonClasses} rounded-lg transition-all duration-200 hover:scale-105`}
+          >
+            {isCollapsed ? (
+              <ChevronDown className={`w-3 h-3 ${textClasses}`} />
+            ) : (
+              <ChevronUp className={`w-3 h-3 ${textClasses}`} />
+            )}
+          </button>
         </div>
       </div>
 
-      <div className="space-y-2 text-xs">
+      {!isCollapsed && (
+        <div className="space-y-2 text-xs mt-3">
         <div className={`${textClasses} opacity-75`}>
           Status: {!hasApiKey && !isDemoMode ? 'API Key Missing' : 
                    isDemoMode ? `Demo Mode (${MOCK_WEATHER_SCENARIOS[currentScenario].name})` :
@@ -354,10 +366,12 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
             Next check in ~{isDemoMode ? '10 seconds' : '5 minutes'}
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Demo Controls */}
-      <div className={`mt-3 pt-3 border-t ${isDarkTheme ? 'border-gray-600/50' : 'border-white/20'} space-y-2`}>
+      {!isCollapsed && (
+        <div className={`mt-3 pt-3 border-t ${isDarkTheme ? 'border-gray-600/50' : 'border-white/20'} space-y-2`}>
         <button
           onClick={toggleDemoMode}
           className={`w-full px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
@@ -382,7 +396,8 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

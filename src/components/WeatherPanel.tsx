@@ -179,6 +179,7 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ coordinates, isDarkT
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showForecast, setShowForecast] = useState(false);
 
   useEffect(() => {
     const loadWeatherData = async () => {
@@ -215,7 +216,7 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ coordinates, isDarkT
   };
 
   return (
-    <div className={`${panelClasses} w-80 transition-all duration-300 ${isCollapsed ? 'h-auto' : 'max-h-96 overflow-y-auto weather-scrollbar'}`}>
+    <div className={`${panelClasses} w-80 transition-all duration-300`}>
       {/* Header */}
       <div className={`p-4 border-b ${isDarkTheme ? 'border-gray-700/50' : 'border-white/20'}`}>
         <div className="flex items-center justify-between">
@@ -240,7 +241,7 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ coordinates, isDarkT
 
       {/* Content */}
       {!isCollapsed && (
-        <div className="p-4 pt-0 space-y-4">
+        <div className="p-4 space-y-4">
           {isLoading && (
             <div className={`${textClasses} text-center py-4`}>
               <div className="animate-spin w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full mx-auto mb-2"></div>
@@ -317,14 +318,25 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ coordinates, isDarkT
                 )}
               </div>
 
-              {/* 5-Day Forecast */}
-              <div className={`p-3 rounded-lg ${isDarkTheme ? 'bg-gray-800/50' : 'bg-white/10'}`}>
-                <h4 className={`${textClasses} font-medium mb-3 flex items-center gap-2`}>
+              {/* 5-Day Forecast - Collapsible */}
+              <div className={`rounded-lg ${isDarkTheme ? 'bg-gray-800/50' : 'bg-white/10'}`}>
+                <button
+                  onClick={() => setShowForecast(!showForecast)}
+                  className={`w-full p-3 flex items-center justify-between ${textClasses} hover:opacity-80 transition-opacity`}
+                >
+                  <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  5-Day Forecast
-                </h4>
+                    <span className="font-medium">5-Day Forecast</span>
+                  </div>
+                  {showForecast ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </button>
                 
-                <div className="space-y-2">
+                {showForecast && (
+                  <div className="px-3 pb-3 space-y-2">
                   {weatherData.daily.slice(1, 6).map((day, index) => (
                     <div key={index} className="flex items-center justify-between py-2">
                       <div className="flex items-center gap-3 flex-1">
@@ -355,7 +367,8 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ coordinates, isDarkT
                       </div>
                     </div>
                   ))}
-                </div>
+                  </div>
+                )}
               </div>
             </>
           )}
