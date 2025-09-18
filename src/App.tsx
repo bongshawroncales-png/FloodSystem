@@ -1042,6 +1042,8 @@ function App() {
             </div>
           </div>
         </div>
+          )}
+        </div>
       </div>
 
       {/* Drawing Instructions */}
@@ -1082,8 +1084,6 @@ function App() {
               </button>
             )}
           </div>
-            </div>
-          )}
         </div>
       )}
 
