@@ -20,6 +20,7 @@ import { FloodLevel, DrawingState, FloodRiskArea } from './types';
 import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
 import { FloodRiskAreaPopup } from './components/FloodRiskAreaPopup';
 import { HoverTooltip } from './components/HoverTooltip';
+import { Sidebar } from './components/Sidebar';
 import { WeatherPanel } from './components/WeatherPanel';
 import { LiveRiskMonitor } from './components/LiveRiskMonitor';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -513,6 +514,37 @@ function App() {
     }
   }, [drawingState.currentTool, floodRiskAreas]);
 
+  // Handle area selection from sidebar
+  const handleAreaSelect = useCallback((area: FloodRiskArea) => {
+    // Center map on the selected area
+    let centerCoords;
+    if (area.geometry.type === 'Point') {
+      centerCoords = area.geometry.coordinates as number[];
+    } else if (area.geometry.type === 'Polygon') {
+      // Calculate centroid of polygon
+      const coords = area.geometry.coordinates as number[][][];
+      const firstRing = coords[0];
+      const sumLat = firstRing.reduce((sum, coord) => sum + coord[1], 0);
+      const sumLng = firstRing.reduce((sum, coord) => sum + coord[0], 0);
+      centerCoords = [sumLng / firstRing.length, sumLat / firstRing.length];
+    }
+    
+    if (centerCoords) {
+      setViewState(prev => ({
+        ...prev,
+        longitude: centerCoords[0],
+        latitude: centerCoords[1],
+        zoom: Math.max(prev.zoom, 16),
+        transitionDuration: 1000
+      }));
+      
+      // Show popup after a short delay
+      setTimeout(() => {
+        setSelectedRiskArea(area);
+        setRiskAreaPopupPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+      }, 1000);
+    }
+  }, []);
   // Handle mouse move for hover tooltips
   const handleMouseMove = useCallback((event: any) => {
     if (drawingState.currentTool === 'delete') {
@@ -817,27 +849,13 @@ function App() {
         )}
       </Map>
 
-      {/* Top Left Panel - App Title & Search */}
-      <div className="absolute top-4 left-4 z-10">
-        <div className={`${panelClasses} p-4 min-w-80`}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className={iconBgClasses}>
-              <MapPin className="w-5 h-5 text-white" />
-            </div>
-            <h1 className={`${textClasses} font-semibold text-lg tracking-tight`}>
-              Oras Flood Risk System
-            </h1>
-          </div>
-          <div className="relative">
-            <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${isDarkTheme ? 'text-gray-400' : 'text-gray-300'}`} />
-            <input
-              type="text"
-              placeholder="Search places..."
-              className={inputClasses}
-            />
-          </div>
-        </div>
-      </div>
+      {/* Sidebar */}
+      <Sidebar
+        floodRiskAreas={floodRiskAreas}
+        onAreaSelect={handleAreaSelect}
+        onAreaDelete={deleteFloodRiskArea}
+        isDarkTheme={isDarkTheme}
+      />
 
       {/* Top Right Panel - Map Controls */}
       <div className="absolute top-4 right-4 z-10">
