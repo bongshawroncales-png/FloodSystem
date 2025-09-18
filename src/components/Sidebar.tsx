@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut, Shield, FileText, Settings, BarChart3, Users, Home, Search } from 'lucide-react';
+import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut, Shield, FileText, Settings, BarChart3, Users, Home, Search, Filter } from 'lucide-react';
 import { FloodRiskArea } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { ConfirmationModal } from './ConfirmationModal';
@@ -12,6 +12,7 @@ interface SidebarProps {
   onShowAuth: () => void;
   onShowAdmin: () => void;
   onShowIncidents: () => void;
+  onShowAnalytics: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -22,9 +23,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onShowAuth,
   onShowAdmin,
   onShowIncidents
+  onShowAnalytics
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [searchQuery, setSearchQuery] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     isOpen: boolean;
     areaId: string;
@@ -58,6 +61,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     });
   };
 
+  // Filter areas based on search query
+  const filteredAreas = floodRiskAreas.filter(area =>
+    area.basicInfo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    area.basicInfo.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    area.riskLevel.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const getRiskColor = (level: string) => {
     switch (level) {
       case 'Very Low': return 'text-blue-600 bg-blue-100';
@@ -81,12 +90,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       action: () => setActiveSection('dashboard')
     },
     {
-      id: 'search',
-      label: 'Search Areas',
-      icon: Search,
-      action: () => setActiveSection('search')
-    },
-    {
       id: 'incidents',
       label: 'Flood Records',
       icon: FileText,
@@ -100,7 +103,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'analytics',
       label: 'Analytics',
       icon: BarChart3,
-      action: () => setActiveSection('analytics')
+      action: () => {
+        onShowAnalytics();
+        setIsOpen(false);
+      }
     }
   ];
 
@@ -170,15 +176,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search areas..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-          </div>
         </div>
 
         {/* Navigation Menu */}
@@ -220,18 +217,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   Marked Areas
                 </h3>
                 <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                  {floodRiskAreas.length}
+                  {filteredAreas.length}
                 </span>
               </div>
 
+              {/* Search Bar for Areas */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search marked areas..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
               {floodRiskAreas.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <MapPin className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No marked areas yet</p>
                 </div>
+              ) : filteredAreas.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Filter className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No areas match your search</p>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="text-blue-600 text-xs mt-1 hover:underline"
+                  >
+                    Clear search
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {floodRiskAreas.map((area) => (
+                  {filteredAreas.map((area) => (
                     <div
                       key={area.id}
                       className="p-3 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
