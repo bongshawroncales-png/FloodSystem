@@ -71,8 +71,28 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({ onRiskUpdate }
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [monitoringInterval, setMonitoringInterval] = useState<NodeJS.Timeout | null>(null);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+
+  // Check API key on component mount
+  useEffect(() => {
+    if (!OPENWEATHER_API_KEY) {
+      setApiKeyError('OpenWeatherMap API key not configured');
+      console.warn('LiveRiskMonitor: OpenWeatherMap API key not found. Live monitoring disabled.');
+    } else if (OPENWEATHER_API_KEY.length !== 32) {
+      setApiKeyError('Invalid API key format');
+      console.warn('LiveRiskMonitor: Invalid API key format. Expected 32 characters.');
+    } else {
+      setApiKeyError(null);
+    }
+  }, []);
 
   const updateAreaRisk = useCallback(async (area: FloodRiskArea) => {
+    // Skip if API key is not properly configured
+    if (apiKeyError) {
+      console.log('Skipping weather update due to API key issue:', apiKeyError);
+      return;
+    }
+
     try {
       // Get coordinates for weather data
       let coordinates: [number, number];
@@ -130,9 +150,9 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({ onRiskUpdate }
 
   const monitorAllAreas = useCallback(async () => {
     try {
-      // Check API key before starting monitoring
-      if (!OPENWEATHER_API_KEY) {
-        console.error('Cannot start monitoring: OpenWeatherMap API key is not configured.');
+      // Skip monitoring if API key is not properly configured
+      if (apiKeyError) {
+        console.log('Skipping monitoring cycle due to API key issue:', apiKeyError);
         return;
       }
       
@@ -183,6 +203,11 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({ onRiskUpdate }
   }, [updateAreaRisk]);
 
   const startMonitoring = useCallback(() => {
+    if (apiKeyError) {
+      console.log('Cannot start monitoring due to API key issue:', apiKeyError);
+      return;
+    }
+
     if (monitoringInterval) return;
 
     console.log('Starting live risk monitoring...');
@@ -217,40 +242,56 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({ onRiskUpdate }
   }, []);
 
   return (
-    <div className="fixed top-20 left-4 z-10 bg-white/90 backdrop-blur-md rounded-lg shadow-lg border border-gray-200 p-3">
+    <div className={`fixed top-20 left-4 z-10 backdrop-blur-md rounded-lg shadow-lg border p-3 ${
+      apiKeyError ? 'bg-red-50/90 border-red-200' : 'bg-white/90 border-gray-200'
+    }`}>
       <div className="flex items-center gap-2 mb-2">
-        <div className={`w-3 h-3 rounded-full ${isMonitoring ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-        <span className="text-sm font-medium text-gray-800">
+        <div className={`w-3 h-3 rounded-full ${
+          apiKeyError ? 'bg-red-500' : isMonitoring ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+        }`} />
+        <span className={`text-sm font-medium ${apiKeyError ? 'text-red-800' : 'text-gray-800'}`}>
           Live Risk Monitor
         </span>
       </div>
       
-      <div className="text-xs text-gray-600 space-y-1">
-        <div>Status: {isMonitoring ? 'Active' : 'Inactive'}</div>
+      <div className={`text-xs space-y-1 ${apiKeyError ? 'text-red-600' : 'text-gray-600'}`}>
+        {apiKeyError ? (
+          <div>Status: Disabled - {apiKeyError}</div>
+        ) : (
+          <div>Status: {isMonitoring ? 'Active' : 'Inactive'}</div>
+        )}
         {lastUpdate && (
           <div>Last Update: {lastUpdate.toLocaleTimeString()}</div>
         )}
-        <div className="text-xs text-gray-500 mt-2">
-          Updates every 10 minutes
-        </div>
+        {!apiKeyError && (
+          <div className="text-xs text-gray-500 mt-2">
+            Updates every 10 minutes
+          </div>
+        )}
       </div>
       
       <div className="flex gap-2 mt-2">
         <button
           onClick={startMonitoring}
-          disabled={isMonitoring}
+          disabled={isMonitoring || !!apiKeyError}
           className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Start
         </button>
         <button
           onClick={stopMonitoring}
-          disabled={!isMonitoring}
+          disabled={!isMonitoring || !!apiKeyError}
           className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Stop
         </button>
       </div>
+      
+      {apiKeyError && (
+        <div className="mt-2 text-xs text-red-600">
+          Configure VITE_OPENWEATHER_API_KEY in .env file
+        </div>
+      )}
     </div>
   );
 };
