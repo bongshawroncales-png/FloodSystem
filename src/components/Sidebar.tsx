@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut, Shield, FileText } from 'lucide-react';
 import { FloodRiskArea } from '../types';
 import { useAuth } from '../hooks/useAuth';
+import { ConfirmationModal } from './ConfirmationModal';
 
 interface SidebarProps {
   floodRiskAreas: FloodRiskArea[];
@@ -23,8 +24,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onShowIncidents
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    areaId: string;
+    areaName: string;
+  }>({
+    isOpen: false,
+    areaId: '',
+    areaName: ''
+  });
   const { user, userRole, loading, signInWithGoogle, logout } = useAuth();
 
+  const handleDeleteClick = (areaId: string, areaName: string) => {
+    // Check permissions before showing delete confirmation
+    if (userRole !== 'admin' && userRole !== 'authorized') {
+      return; // Don't show delete option for regular users
+    }
+    
+    setDeleteConfirmation({
+      isOpen: true,
+      areaId,
+      areaName
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    onAreaDelete(deleteConfirmation.areaId);
+    setDeleteConfirmation({
+      isOpen: false,
+      areaId: '',
+      areaName: ''
+    });
+  };
   const getRiskColor = (level: string) => {
     switch (level) {
       case 'Very Low': return 'text-blue-600 bg-blue-100';
@@ -260,18 +291,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         >
                           <Eye className={`w-3 h-3 ${textClasses}`} />
                         </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Delete "${area.basicInfo.name}"?`)) {
-                              onAreaDelete(area.id!);
-                            }
-                          }}
-                          className={`p-1.5 hover:bg-red-500/20 rounded transition-colors`}
-                          title="Delete Area"
-                        >
-                          <Trash2 className="w-3 h-3 text-red-400" />
-                        </button>
+                        {(userRole === 'admin' || userRole === 'authorized') && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(area.id!, area.basicInfo.name);
+                            }}
+                            className={`p-1.5 hover:bg-red-500/20 rounded transition-colors`}
+                            title="Delete Area"
+                          >
+                            <Trash2 className="w-3 h-3 text-red-400" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -304,6 +335,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
         </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, areaId: '', areaName: '' })}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Flood Risk Area"
+        message={`Are you sure you want to delete "${deleteConfirmation.areaName}"? This action cannot be undone and will permanently remove all associated data.`}
+        type="delete"
+        confirmText="Delete Area"
+        cancelText="Keep Area"
+      />
       </div>
     </>
   );
