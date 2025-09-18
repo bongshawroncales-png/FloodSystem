@@ -505,6 +505,19 @@ function App() {
       >
         {/* Flood Risk Areas Layer */}
         <Source id="flood-risk-areas" type="geojson" data={floodRiskAreasGeoJSON}>
+          {/* Point markers - simplified and more visible */}
+          <Layer
+            id="flood-risk-areas-circle"
+            type="circle"
+            paint={{
+              'circle-color': ['get', 'color'],
+              'circle-radius': 20,
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': 3,
+              'circle-opacity': 0.9,
+              'circle-stroke-opacity': 1.0
+            }}
+          />
           {/* Polygon fill layer */}
           <Layer
             id="flood-risk-areas-fill"
@@ -512,7 +525,7 @@ function App() {
             filter={['==', ['geometry-type'], 'Polygon']}
             paint={{
               'fill-color': ['get', 'color'],
-              'fill-opacity': 0.6
+              'fill-opacity': 0.4
             }}
           />
           {/* Polygon outline layer */}
@@ -522,38 +535,8 @@ function App() {
             filter={['==', ['geometry-type'], 'Polygon']}
             paint={{
               'line-color': ['get', 'color'],
-              'line-width': 4,
-              'line-opacity': 1.0
-            }}
-          />
-          {/* Point/marker layer */}
-          <Layer
-            id="flood-risk-areas-circle"
-            type="circle"
-            filter={['==', ['geometry-type'], 'Point']}
-            paint={{
-              'circle-color': ['get', 'color'],
-              'circle-radius': 15,
-              'circle-stroke-color': '#ffffff',
-              'circle-stroke-width': 4,
-              'circle-opacity': 1.0
-            }}
-          />
-          {/* Labels layer */}
-          <Layer
-            id="flood-risk-areas-labels"
-            type="symbol"
-            layout={{
-              'text-field': ['get', 'name'],
-              'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-              'text-size': 14,
-              'text-offset': [0, 1],
-              'text-anchor': 'top'
-            }}
-            paint={{
-              'text-color': '#ffffff',
-              'text-halo-color': '#000000',
-              'text-halo-width': 3
+              'line-width': 3,
+              'line-opacity': 0.8
             }}
           />
         </Source>
