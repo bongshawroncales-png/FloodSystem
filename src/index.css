@@ -44,12 +44,24 @@
   20%, 40%, 60%, 80% { transform: translateX(2px); }
 }
 
+@keyframes gentle-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1px); }
+  75% { transform: translateX(1px); }
+}
+
+@keyframes intense-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
 .high-risk-flash {
-  animation: flash-orange 1.5s infinite, shake 2s infinite;
+  animation: flash-orange 1.5s infinite, gentle-shake 2s infinite;
 }
 
 .severe-risk-flash {
-  animation: flash-red 1s infinite, shake 1.5s infinite;
+  animation: flash-red 1s infinite, intense-shake 1.5s infinite;
 }
 
 /* Pulsing effect for moderate risk */
@@ -59,5 +71,18 @@
 }
 
 .moderate-risk-pulse {
+  animation: pulse-yellow 2s infinite;
+}
+
+/* Map layer animations - applied via CSS classes */
+.maplibregl-layer.severe-risk-flash {
+  animation: flash-red 1s infinite, intense-shake 1.5s infinite;
+}
+
+.maplibregl-layer.high-risk-flash {
+  animation: flash-orange 1.5s infinite, gentle-shake 2s infinite;
+}
+
+.maplibregl-layer.moderate-risk-pulse {
   animation: pulse-yellow 2s infinite;
 }

@@ -21,6 +21,7 @@ import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
 import { FloodRiskAreaPopup } from './components/FloodRiskAreaPopup';
 import { HoverTooltip } from './components/HoverTooltip';
 import { WeatherPanel } from './components/WeatherPanel';
+import { LiveRiskMonitor } from './components/LiveRiskMonitor';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 
@@ -611,8 +612,38 @@ function App() {
               'circle-radius': 20,
               'circle-stroke-color': '#ffffff',
               'circle-stroke-width': 3,
-              'circle-opacity': 0.9,
+              'circle-opacity': [
+                'case',
+                ['get', 'isSevereRisk'], 0.95,
+                ['get', 'isHighRisk'], 0.9,
+                ['get', 'isModerateRisk'], 0.8,
+                0.7
+              ],
               'circle-stroke-opacity': 1.0
+            }}
+            layout={{
+              'visibility': 'visible'
+            }}
+            className={[
+              'case',
+              ['get', 'isSevereRisk'], 'severe-risk-flash',
+              ['get', 'isHighRisk'], 'high-risk-flash',
+              ['get', 'isModerateRisk'], 'moderate-risk-pulse',
+              ''
+            ]}
+          />
+          {/* High-risk point overlay for animations */}
+          <Layer
+            id="flood-risk-areas-circle-animated"
+            type="circle"
+            filter={['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]}
+            paint={{
+              'circle-color': ['get', 'color'],
+              'circle-radius': 22,
+              'circle-opacity': 0.3,
+              'circle-stroke-color': ['get', 'color'],
+              'circle-stroke-width': 2,
+              'circle-stroke-opacity': 0.6
             }}
             layout={{
               'visibility': 'visible'
@@ -625,7 +656,13 @@ function App() {
             filter={['==', ['geometry-type'], 'Polygon']}
             paint={{
               'fill-color': ['get', 'color'],
-              'fill-opacity': 0.4
+              'fill-opacity': [
+                'case',
+                ['get', 'isSevereRisk'], 0.6,
+                ['get', 'isHighRisk'], 0.5,
+                ['get', 'isModerateRisk'], 0.4,
+                0.3
+              ]
             }}
             layout={{
               'visibility': 'visible'
@@ -638,8 +675,18 @@ function App() {
             filter={['==', ['geometry-type'], 'Polygon']}
             paint={{
               'line-color': ['get', 'color'],
-              'line-width': 3,
-              'line-opacity': 0.8
+              'line-width': [
+                'case',
+                ['get', 'isSevereRisk'], 4,
+                ['get', 'isHighRisk'], 3.5,
+                3
+              ],
+              'line-opacity': [
+                'case',
+                ['get', 'isSevereRisk'], 1.0,
+                ['get', 'isHighRisk'], 0.9,
+                0.8
+              ]
             }}
             layout={{
               'visibility': 'visible'
@@ -771,6 +818,16 @@ function App() {
         <div className="pointer-events-auto">
           <WeatherPanel 
             coordinates={{ lat: viewState.latitude, lng: viewState.longitude }}
+            isDarkTheme={isDarkTheme}
+          />
+        </div>
+      </div>
+
+      {/* Live Risk Monitor Panel */}
+      <div className="absolute top-4 right-4 z-20 pointer-events-none" style={{ transform: 'translateX(-410px)' }}>
+        <div className="pointer-events-auto">
+          <LiveRiskMonitor 
+            onRiskAreasUpdate={loadFloodRiskAreas}
             isDarkTheme={isDarkTheme}
           />
         </div>
