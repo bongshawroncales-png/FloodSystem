@@ -388,7 +388,7 @@ function App() {
         coordinates: [lng, lat]
       };
       setDrawingState(prev => ({ ...prev, pendingGeometry: geometry }));
-      setShowReportModal(true);
+      setShowRiskAreaModal(true);
     } else if (drawingState.currentTool === 'polygon') {
       // Add point to polygon
       setPolygonPoints(prev => [...prev, [lng, lat]]);
@@ -416,17 +416,10 @@ function App() {
         coordinates: [[...polygonPoints, polygonPoints[0]]] // Close the polygon
       };
       setDrawingState(prev => ({ ...prev, pendingGeometry: geometry }));
-      setShowReportModal(true);
+      setShowRiskAreaModal(true);
       setPolygonPoints([]);
     }
   }, [polygonPoints]);
-
-  // Handle report submission
-  const handleReportSubmit = useCallback((report: Omit<FloodReport, 'id' | 'createdAt'>) => {
-    saveFloodReport(report);
-    setDrawingState({ isDrawing: false, currentTool: null, pendingGeometry: null });
-    setShowReportModal(false);
-  }, [saveFloodReport]);
 
   // Handle risk area submission
   const handleRiskAreaSubmit = useCallback((area: Omit<FloodRiskArea, 'id' | 'createdAt'>) => {
@@ -747,7 +740,7 @@ function App() {
                   ? (isDarkTheme ? 'bg-green-600/70 hover:bg-green-600/90' : 'bg-green-500/60 hover:bg-green-500/80')
                   : `${buttonClasses} hover:bg-green-500/50`
               }`}
-              title="Add Marker"
+              title="Mark Flood-Prone Area"
             >
               <MapPin className="w-4 h-4" />
             </button>
@@ -759,7 +752,7 @@ function App() {
                   ? (isDarkTheme ? 'bg-purple-600/70 hover:bg-purple-600/90' : 'bg-purple-500/60 hover:bg-purple-500/80')
                   : `${buttonClasses} hover:bg-purple-500/50`
               }`}
-              title="Draw Polygon"
+              title="Draw Flood-Prone Area"
             >
               <Square className="w-4 h-4" />
             </button>
@@ -771,7 +764,7 @@ function App() {
                   ? (isDarkTheme ? 'bg-red-600/70 hover:bg-red-600/90' : 'bg-red-500/60 hover:bg-red-500/80')
                   : `${buttonClasses} hover:bg-red-500/50`
               }`}
-              title="Delete Shapes"
+              title="Delete Flood-Prone Areas"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -833,7 +826,7 @@ function App() {
 
           {/* Risk Level Legend */}
           <div className={`pt-3 border-t ${isDarkTheme ? 'border-gray-600/50' : 'border-white/20'}`}>
-            <h3 className={`${textClasses} text-sm font-semibold mb-2`}>Risk Levels</h3>
+            <h3 className={`${textClasses} text-sm font-semibold mb-2`}>Flood Risk Levels</h3>
             <div className="space-y-1">
               {Object.entries(RISK_COLORS).map(([level, color]) => (
                 <div key={level} className="flex items-center gap-2">
@@ -845,11 +838,11 @@ function App() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Indicators */}
+            <div className={`mt-2 pt-2 border-t ${isDarkTheme ? 'border-gray-600/50' : 'border-white/20'}`}>
+              <p className={`${textClasses} text-xs`}>
+                Flood-Prone Areas: {floodRiskAreas.length}
+              </p>
+            </div>
       {(showWeather || showFlood) && (
         <div className="absolute top-20 right-4 z-10">
           <div className={`${panelClasses} p-3`}>
@@ -876,15 +869,15 @@ function App() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
           <div className={`${panelClasses} p-4 max-w-sm`}>
             <p className={`${textClasses} text-sm text-center`}>
-              {drawingState.currentTool === 'marker' && 'Click on the map to place a flood marker'}
+              {drawingState.currentTool === 'marker' && 'Click on the map to mark a flood-prone area'}
               {drawingState.currentTool === 'polygon' && (
                 <>
-                  Click to add points ({polygonPoints.length} points added).
+                  Click to add points to define flood-prone area ({polygonPoints.length} points added).
                   <br />
                   Double-click to finish polygon (minimum 3 points).
                 </>
               )}
-              {drawingState.currentTool === 'delete' && 'Click on any shape to delete it'}
+              {drawingState.currentTool === 'delete' && 'Click on any flood-prone area to delete it'}
             </p>
             <button
               onClick={() => setDrawingState({ isDrawing: false, currentTool: null, pendingGeometry: null })}
@@ -897,25 +890,12 @@ function App() {
                 onClick={completePolygon}
                 className={`mt-2 w-full px-3 py-1.5 bg-green-500/60 hover:bg-green-500/80 rounded-lg ${textClasses} text-sm transition-colors`}
               >
-                Finish Polygon
+                Finish Area
               </button>
             )}
           </div>
         </div>
       )}
-
-      {/* Flood Report Modal */}
-      <FloodReportModal
-        isOpen={showReportModal}
-        onClose={() => {
-          setShowReportModal(false);
-          setDrawingState({ isDrawing: false, currentTool: null, pendingGeometry: null });
-          setPolygonPoints([]);
-        }}
-        onSubmit={handleReportSubmit}
-        geometry={drawingState.pendingGeometry}
-        location={`${formatCoordinate(viewState.latitude, false)}, ${formatCoordinate(viewState.longitude, true)}`}
-      />
 
       {/* Flood Risk Area Modal */}
       <FloodRiskAreaModal
