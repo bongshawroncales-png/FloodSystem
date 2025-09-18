@@ -21,6 +21,7 @@ import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
 import { FloodRiskAreaPopup } from './components/FloodRiskAreaPopup';
 import { HoverTooltip } from './components/HoverTooltip';
 import { WeatherPanel } from './components/WeatherPanel';
+import { LiveRiskMonitor } from './components/LiveRiskMonitor';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 
@@ -212,6 +213,13 @@ function App() {
   const [hoveredRiskArea, setHoveredRiskArea] = useState<FloodRiskArea | null>(null);
   const [hoverTooltipPosition, setHoverTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const mapRef = useRef<any>(null);
+
+  // Handle live risk updates
+  const handleRiskUpdate = useCallback((areaId: string, newRiskLevel: FloodLevel) => {
+    setFloodRiskAreas(prev => prev.map(area => 
+      area.id === areaId ? { ...area, riskLevel: newRiskLevel } : area
+    ));
+  }, []);
 
   // Center coordinates for Oras, Eastern Samar
   const CENTER_LAT = 12.1113;
@@ -526,7 +534,10 @@ function App() {
         areaId: area.id,
         riskLevel: area.riskLevel,
         name: area.basicInfo.name,
-        color: RISK_COLORS[area.riskLevel]
+        color: RISK_COLORS[area.riskLevel],
+        isHighRisk: area.riskLevel === 'High' || area.riskLevel === 'Severe',
+        isSevereRisk: area.riskLevel === 'Severe',
+        isModerateRisk: area.riskLevel === 'Moderate'
       },
       geometry: area.geometry
     }))
@@ -610,6 +621,9 @@ function App() {
               'circle-opacity': 0.9,
               'circle-stroke-opacity': 1.0
             }}
+            layout={{
+              'visibility': 'visible'
+            }}
           />
           {/* Polygon fill layer */}
           <Layer
@@ -619,6 +633,9 @@ function App() {
             paint={{
               'fill-color': ['get', 'color'],
               'fill-opacity': 0.4
+            }}
+            layout={{
+              'visibility': 'visible'
             }}
           />
           {/* Polygon outline layer */}
@@ -630,6 +647,9 @@ function App() {
               'line-color': ['get', 'color'],
               'line-width': 3,
               'line-opacity': 0.8
+            }}
+            layout={{
+              'visibility': 'visible'
             }}
           />
         </Source>
@@ -685,6 +705,9 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Live Risk Monitor */}
+      <LiveRiskMonitor onRiskUpdate={handleRiskUpdate} />
 
       {/* Top Right Panel - Map Controls */}
       <div className="absolute top-4 right-4 z-10">
@@ -848,6 +871,9 @@ function App() {
             <div className={`mt-2 pt-2 border-t ${isDarkTheme ? 'border-gray-600/50' : 'border-white/20'}`}>
               <p className={`${textClasses} text-xs`}>
                 Flood-Prone Areas: {floodRiskAreas.length}
+              </p>
+              <p className={`${textClasses} text-xs mt-1`}>
+                High Risk: {floodRiskAreas.filter(area => area.riskLevel === 'High' || area.riskLevel === 'Severe').length}
               </p>
             </div>
           </div>
