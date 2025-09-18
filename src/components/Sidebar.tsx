@@ -22,7 +22,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isDarkTheme,
   onShowAuth,
   onShowAdmin,
-  onShowIncidents
+  onShowIncidents,
   onShowAnalytics,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
