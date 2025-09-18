@@ -480,6 +480,38 @@ function App() {
     }
   }, [drawingState.currentTool, floodRiskAreas]);
 
+  // Handle mouse move for hover tooltips
+  const handleMouseMove = useCallback((event: any) => {
+    if (drawingState.currentTool === 'delete') {
+      setHoveredRiskArea(null);
+      setHoverTooltipPosition(null);
+      return;
+    }
+
+    const features = mapRef.current?.queryRenderedFeatures(event.point);
+    if (features && features.length > 0) {
+      const feature = features.find((f: any) => f.source === 'flood-risk-areas');
+      if (feature && feature.properties?.areaId) {
+        const area = floodRiskAreas.find(a => a.id === feature.properties.areaId);
+        if (area) {
+          setHoveredRiskArea(area);
+          setHoverTooltipPosition({ x: event.point.x, y: event.point.y });
+          return;
+        }
+      }
+    }
+    
+    // Clear hover state if not hovering over any area
+    setHoveredRiskArea(null);
+    setHoverTooltipPosition(null);
+  }, [drawingState.currentTool, floodRiskAreas]);
+
+  // Handle mouse leave to clear hover tooltips
+  const handleMouseLeave = useCallback(() => {
+    setHoveredRiskArea(null);
+    setHoverTooltipPosition(null);
+  }, []);
+
   // Load reports on component mount
   useEffect(() => {
     loadFloodRiskAreas();
@@ -542,6 +574,8 @@ function App() {
         {...viewState}
         onMove={handleViewStateChange}
         onClick={handleMapClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         mapStyle={getCurrentMapStyle()}
         style={{ width: '100%', height: '100%' }}
         scrollZoom={{ smooth: true }}
@@ -558,11 +592,6 @@ function App() {
         onMouseEnter={() => {
           if (mapRef.current) {
             mapRef.current.getCanvas().style.cursor = drawingState.currentTool ? 'crosshair' : 'pointer';
-          }
-        }}
-        onMouseLeave={() => {
-          if (mapRef.current) {
-            mapRef.current.getCanvas().style.cursor = '';
           }
         }}
       >
