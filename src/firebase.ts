@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAd5ezb6CHDXcmZVrpoTUbbJyxdnLaM9Jw",
@@ -17,6 +18,10 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore
 export const db = getFirestore(app);
+
+// Initialize Firebase Auth
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
 // OpenWeatherMap API configuration
 export const OPENWEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;

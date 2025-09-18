@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2 } from 'lucide-react';
+import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut } from 'lucide-react';
 import { FloodRiskArea } from '../types';
+import { useAuth } from '../hooks/useAuth';
 
 interface SidebarProps {
   floodRiskAreas: FloodRiskArea[];
@@ -16,6 +17,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isDarkTheme
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, loading, signInWithGoogle, logout } = useAuth();
 
   const getRiskColor = (level: string) => {
     switch (level) {
@@ -85,15 +87,62 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* User Account Section */}
           <div className={`p-3 rounded-lg ${isDarkTheme ? 'bg-gray-800/50' : 'bg-gray-100/50'}`}>
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-full ${isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                <User className={`w-4 h-4 ${textClasses}`} />
+            {loading ? (
+              <div className={`${textClasses} text-center py-2`}>
+                <div className="animate-spin w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full mx-auto"></div>
               </div>
-              <div>
-                <p className={`${textClasses} font-medium text-sm`}>Guest User</p>
-                <p className={`${textClasses} opacity-75 text-xs`}>Oras, Eastern Samar</p>
+            ) : user ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  {user.photoURL ? (
+                    <img 
+                      src={user.photoURL} 
+                      alt="Profile" 
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className={`p-2 rounded-full ${isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                      <User className={`w-4 h-4 ${textClasses}`} />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className={`${textClasses} font-medium text-sm truncate`}>
+                      {user.displayName || 'User'}
+                    </p>
+                    <p className={`${textClasses} opacity-75 text-xs truncate`}>
+                      {user.email}
+                    </p>
+                    <p className={`${textClasses} opacity-75 text-xs`}>Oras, Eastern Samar</p>
+                  </div>
+                </div>
+                <button
+                  onClick={logout}
+                  className={`w-full flex items-center justify-center gap-2 px-3 py-2 ${buttonClasses} rounded-lg ${textClasses} text-xs transition-colors hover:bg-red-500/20`}
+                >
+                  <LogOut className="w-3 h-3" />
+                  Sign Out
+                </button>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-full ${isDarkTheme ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                    <User className={`w-4 h-4 ${textClasses}`} />
+                  </div>
+                  <div>
+                    <p className={`${textClasses} font-medium text-sm`}>Guest User</p>
+                    <p className={`${textClasses} opacity-75 text-xs`}>Oras, Eastern Samar</p>
+                  </div>
+                </div>
+                <button
+                  onClick={signInWithGoogle}
+                  className={`w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600/80 hover:bg-blue-600 rounded-lg text-white text-xs transition-colors`}
+                >
+                  <LogIn className="w-3 h-3" />
+                  Sign in with Google
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

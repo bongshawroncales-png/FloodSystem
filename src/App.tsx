@@ -21,6 +21,7 @@ import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
 import { FloodRiskAreaPopup } from './components/FloodRiskAreaPopup';
 import { HoverTooltip } from './components/HoverTooltip';
 import { Sidebar } from './components/Sidebar';
+import { useAuth } from './hooks/useAuth';
 import { WeatherPanel } from './components/WeatherPanel';
 import { LiveRiskMonitor } from './components/LiveRiskMonitor';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -190,6 +191,7 @@ const RISK_COLORS = {
 };
 
 function App() {
+  const { user } = useAuth();
   const [viewState, setViewState] = useState<ViewState>({
     longitude: 125.375,
     latitude: 12.1116,
@@ -400,14 +402,24 @@ function App() {
   // Save flood risk area to Firebase
   const saveFloodRiskArea = useCallback(async (area: Omit<FloodRiskArea, 'id' | 'createdAt'>) => {
     try {
+      // Add user information if authenticated
+      const areaWithUser = {
+        ...area,
+        createdBy: user ? {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName
+        } : null
+      };
+      
       // Ensure coordinates are properly saved
-      const areaToSave = { ...area };
+      const areaToSave = { ...areaWithUser };
       
       // For Polygon types, we need to stringify the coordinates for Firestore
-      if (area.geometry.type === 'Polygon') {
+      if (areaWithUser.geometry.type === 'Polygon') {
         areaToSave.geometry = {
-          ...area.geometry,
-          coordinates: JSON.stringify(area.geometry.coordinates)
+          ...areaWithUser.geometry,
+          coordinates: JSON.stringify(areaWithUser.geometry.coordinates)
         };
       }
       
@@ -1041,8 +1053,8 @@ function App() {
               </p>
             </div>
           </div>
-            </div>
-          )}
+        </div>
+            )}
         </div>
       </div>
 
