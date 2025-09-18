@@ -606,7 +606,7 @@ function App() {
           <Layer
             id="flood-risk-areas-circle"
             type="circle"
-            filter={['==', ['geometry-type'], 'Point']}
+            filter={['all', ['==', ['geometry-type'], 'Point']]}
             paint={{
               'circle-color': ['get', 'color'],
               'circle-radius': 20,
@@ -636,7 +636,7 @@ function App() {
           <Layer
             id="flood-risk-areas-circle-animated"
             type="circle"
-            filter={['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]}
+            filter={['all', ['==', ['geometry-type'], 'Point'], ['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]]}
             paint={{
               'circle-color': ['get', 'color'],
               'circle-radius': 22,
@@ -653,7 +653,7 @@ function App() {
           <Layer
             id="flood-risk-areas-fill"
             type="fill"
-            filter={['==', ['geometry-type'], 'Polygon']}
+            filter={['all', ['==', ['geometry-type'], 'Polygon']]}
             paint={{
               'fill-color': ['get', 'color'],
               'fill-opacity': [
@@ -672,7 +672,7 @@ function App() {
           <Layer
             id="flood-risk-areas-outline"
             type="line"
-            filter={['==', ['geometry-type'], 'Polygon']}
+            filter={['all', ['==', ['geometry-type'], 'Polygon']]}
             paint={{
               'line-color': ['get', 'color'],
               'line-width': [
