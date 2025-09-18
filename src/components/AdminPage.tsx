@@ -183,7 +183,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
-                  <p className="text-sm text-gray-600">Oras Flood Risk System</p>
+                  <p className="text-sm text-gray-600">Kalaw Flood Monitoring System</p>
                 </div>
               </div>
             </div>

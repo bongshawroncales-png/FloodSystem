@@ -78,7 +78,7 @@ export const FloodIncidentModal: React.FC<FloodIncidentModalProps> = ({
     description: '',
     location: area.basicInfo.name,
     barangay: '',
-    municipality: 'Oras',
+    municipality: 'Kalaw, Oras',
     province: 'Eastern Samar',
     gpsCoordinates: '',
     onsetDateTime: '',

@@ -77,7 +77,7 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
       <body>
         <div class="header">
           <h1>FLOOD INCIDENT REPORT</h1>
-          <p><strong>Oras Eastern Samar Flood Risk System</strong></p>
+          <p><strong>Kalaw Flood Monitoring System</strong></p>
           <p>Generated on: ${new Date().toLocaleString()}</p>
         </div>
 

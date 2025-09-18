@@ -137,7 +137,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <p className={`${textClasses} opacity-75 text-xs truncate`}>
                       {user.email}
                     </p>
-                    <p className={`${textClasses} opacity-75 text-xs`}>Oras, Eastern Samar</p>
+                    <p className={`${textClasses} opacity-75 text-xs`}>Kalaw, Oras, Eastern Samar</p>
                   </div>
                 </div>
                 <button
