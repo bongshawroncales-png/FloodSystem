@@ -388,7 +388,6 @@ function App() {
         coordinates: [lng, lat]
       };
       setDrawingState(prev => ({ ...prev, pendingGeometry: geometry }));
-      setShowRiskAreaModal(true);
     } else if (drawingState.currentTool === 'polygon') {
       // Add point to polygon
       setPolygonPoints(prev => [...prev, [lng, lat]]);
@@ -396,13 +395,10 @@ function App() {
       // Handle deletion of existing shapes
       const features = mapRef.current?.queryRenderedFeatures(event.point);
       if (features && features.length > 0) {
-        const reportFeature = features.find((f: any) => f.source === 'flood-reports');
-        if (reportFeature && reportFeature.properties?.reportId) {
-          deleteFloodReport(reportFeature.properties.reportId);
-        }
-        const feature = features.find((f: any) => f.source === 'flood-reports');
-        if (feature && feature.properties?.reportId) {
-          deleteFloodReport(feature.properties.reportId);
+        // Check for flood risk areas
+        const riskAreaFeature = features.find((f: any) => f.source === 'flood-risk-areas');
+        if (riskAreaFeature && riskAreaFeature.properties?.areaId) {
+          deleteFloodRiskArea(riskAreaFeature.properties.areaId);
         }
       }
     }
@@ -416,7 +412,6 @@ function App() {
         coordinates: [[...polygonPoints, polygonPoints[0]]] // Close the polygon
       };
       setDrawingState(prev => ({ ...prev, pendingGeometry: geometry }));
-      setShowRiskAreaModal(true);
       setPolygonPoints([]);
     }
   }, [polygonPoints]);
@@ -740,7 +735,7 @@ function App() {
                   ? (isDarkTheme ? 'bg-green-600/70 hover:bg-green-600/90' : 'bg-green-500/60 hover:bg-green-500/80')
                   : `${buttonClasses} hover:bg-green-500/50`
               }`}
-              title="Mark Flood-Prone Area"
+              title="Add Flood-Prone Point"
             >
               <MapPin className="w-4 h-4" />
             </button>
@@ -873,10 +868,10 @@ function App() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
           <div className={`${panelClasses} p-4 max-w-sm`}>
             <p className={`${textClasses} text-sm text-center`}>
-              {drawingState.currentTool === 'marker' && 'Click on the map to mark a flood-prone area'}
+              {drawingState.currentTool === 'marker' && 'Click on the map to add a flood-prone point'}
               {drawingState.currentTool === 'polygon' && (
                 <>
-                  Click to add points to define flood-prone area ({polygonPoints.length} points added).
+                  Click to add points for flood-prone area ({polygonPoints.length} points added).
                   <br />
                   Double-click to finish polygon (minimum 3 points).
                 </>
