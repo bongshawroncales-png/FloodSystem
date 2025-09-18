@@ -286,6 +286,20 @@ function App() {
     const map = mapRef.current.getMap();
     if (!map) return;
 
+    // Apply glow effects to canvas based on risk levels
+    const canvas = map.getCanvas();
+    const hasHighRisk = floodRiskAreas.some(area => area.riskLevel === 'High');
+    const hasSevereRisk = floodRiskAreas.some(area => area.riskLevel === 'Severe');
+    
+    // Remove existing glow classes
+    canvas.classList.remove('high-risk-glow', 'severe-risk-glow');
+    
+    // Apply appropriate glow effect
+    if (hasSevereRisk) {
+      canvas.classList.add('severe-risk-glow');
+    } else if (hasHighRisk) {
+      canvas.classList.add('high-risk-glow');
+    }
     // Set up animation timer for flashing effects
     const animationInterval = setInterval(() => {
       // Update the GeoJSON data source to trigger re-rendering with new animation time
@@ -303,10 +317,14 @@ function App() {
         };
         source.setData(updatedGeoJSON);
       }
-    }, 100); // Update every 100ms for smooth animation
+    }, 50); // Update every 50ms for smoother animation
 
     return () => {
       clearInterval(animationInterval);
+      // Clean up glow effects
+      if (canvas) {
+        canvas.classList.remove('high-risk-glow', 'severe-risk-glow');
+      }
     };
   }, [floodRiskAreas]);
   const handleZoomIn = useCallback(() => {
@@ -657,21 +675,20 @@ function App() {
               ],
               'circle-opacity': [
                 'case',
-                ['get', 'isSevereRisk'], [
-                  'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 10]], 20], 10], 0.3, 1.0
-                ],
-                ['get', 'isHighRisk'], [
-                  'case', 
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 6.67]], 20], 10], 0.4, 1.0
-                ],
-                ['get', 'isModerateRisk'], [
-                  'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 5]], 20], 10], 0.6, 1.0
-                ],
-                0.8
+                ['get', 'isSevereRisk'], 
+                ['+', 0.7, ['*', 0.3, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]]],
+                ['get', 'isHighRisk'], 
+                ['+', 0.75, ['*', 0.25, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]],
+                0.85
               ],
-              'circle-stroke-opacity': 1.0
+              'circle-stroke-opacity': [
+                'case',
+                ['get', 'isSevereRisk'], 
+                ['+', 0.8, ['*', 0.2, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]]],
+                ['get', 'isHighRisk'], 
+                ['+', 0.85, ['*', 0.15, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]],
+                1.0
+              ]
             }}
             layout={{
               'visibility': 'visible'
@@ -686,18 +703,10 @@ function App() {
               'fill-color': ['get', 'color'],
               'fill-opacity': [
                 'case',
-                ['get', 'isSevereRisk'], [
-                  'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 10]], 20], 10], 0.2, 0.7
-                ],
-                ['get', 'isHighRisk'], [
-                  'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 6.67]], 20], 10], 0.2, 0.6
-                ],
-                ['get', 'isModerateRisk'], [
-                  'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 5]], 20], 10], 0.3, 0.5
-                ],
+                ['get', 'isSevereRisk'], 
+                ['+', 0.4, ['*', 0.3, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]]],
+                ['get', 'isHighRisk'], 
+                ['+', 0.45, ['*', 0.25, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]],
                 0.4
               ]
             }}
@@ -714,24 +723,18 @@ function App() {
               'line-color': ['get', 'color'],
               'line-width': [
                 'case',
-                ['get', 'isSevereRisk'], 4,
-                ['get', 'isHighRisk'], 3.5,
+                ['get', 'isSevereRisk'], 
+                ['+', 4, ['*', 1, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]]],
+                ['get', 'isHighRisk'], 
+                ['+', 3.5, ['*', 0.8, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]],
                 3
               ],
               'line-opacity': [
                 'case',
-                ['get', 'isSevereRisk'], [
-                  'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 10]], 20], 10], 0.4, 1.0
-                ],
-                ['get', 'isHighRisk'], [
-                  'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 6.67]], 20], 10], 0.4, 1.0
-                ],
-                ['get', 'isModerateRisk'], [
-                  'case',
-                  ['<', ['%', ['round', ['*', ['get', 'animationTime'], 5]], 20], 10], 0.5, 0.9
-                ],
+                ['get', 'isSevereRisk'], 
+                ['+', 0.7, ['*', 0.3, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]]],
+                ['get', 'isHighRisk'], 
+                ['+', 0.75, ['*', 0.25, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]],
                 0.8
               ]
             }}
