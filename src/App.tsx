@@ -597,16 +597,6 @@ function App() {
 
       {/* Top Right Panel - Map Controls */}
       <div className="absolute top-4 right-4 z-10">
-        {/* Weather Panel */}
-        {showWeather && (
-          <div className="mb-4">
-            <WeatherPanel 
-              coordinates={{ lat: viewState.latitude, lng: viewState.longitude }}
-              isDarkTheme={isDarkTheme}
-            />
-          </div>
-        )}
-        
         <div className={`${panelClasses} p-3`}>
           <div className="flex flex-col gap-2">
             {/* Zoom Controls */}
@@ -671,6 +661,18 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Weather Panel - Separate positioning */}
+      {showWeather && (
+        <div className="absolute top-4 right-4 z-20 pointer-events-none" style={{ transform: 'translateX(-100px)' }}>
+          <div className="pointer-events-auto">
+            <WeatherPanel 
+              coordinates={{ lat: viewState.latitude, lng: viewState.longitude }}
+              isDarkTheme={isDarkTheme}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Bottom Right Panel - Additional Tools */}
       <div className="absolute bottom-4 right-4 z-10 space-y-3">
