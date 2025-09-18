@@ -281,36 +281,33 @@ function App() {
 
   // Apply CSS animations to map layers based on risk levels
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || floodRiskAreas.length === 0) return;
 
     const map = mapRef.current.getMap();
     if (!map) return;
 
-    // Apply animations to high and severe risk areas
-    floodRiskAreas.forEach(area => {
-      const layerIds = area.geometry.type === 'Point' 
-        ? ['flood-risk-areas-circle-animated', 'flood-risk-areas-circle-moderate']
-        : ['flood-risk-areas-fill-animated'];
+    // Set up animation timer for flashing effects
+    const animationInterval = setInterval(() => {
+      // Update the GeoJSON data source to trigger re-rendering with new animation time
+      const source = map.getSource('flood-risk-areas');
+      if (source && source.type === 'geojson') {
+        const updatedGeoJSON = {
+          ...floodRiskAreasGeoJSON,
+          features: floodRiskAreasGeoJSON.features.map(feature => ({
+            ...feature,
+            properties: {
+              ...feature.properties,
+              animationTime: Date.now() / 1000
+            }
+          }))
+        };
+        source.setData(updatedGeoJSON);
+      }
+    }, 100); // Update every 100ms for smooth animation
 
-      layerIds.forEach(layerId => {
-        const layer = map.getLayer(layerId);
-        if (layer) {
-          const canvas = map.getCanvas();
-          if (area.riskLevel === 'Severe') {
-            canvas.classList.add('severe-risk-area');
-            canvas.classList.remove('high-risk-area', 'moderate-risk-area');
-          } else if (area.riskLevel === 'High') {
-            canvas.classList.add('high-risk-area');
-            canvas.classList.remove('severe-risk-area', 'moderate-risk-area');
-          } else if (area.riskLevel === 'Moderate') {
-            canvas.classList.add('moderate-risk-area');
-            canvas.classList.remove('severe-risk-area', 'high-risk-area');
-          } else {
-            canvas.classList.remove('severe-risk-area', 'high-risk-area', 'moderate-risk-area');
-          }
-        }
-      });
-    });
+    return () => {
+      clearInterval(animationInterval);
+    };
   }, [floodRiskAreas]);
   const handleZoomIn = useCallback(() => {
     setViewState(prev => ({ ...prev, zoom: Math.min(prev.zoom + 1, 20) }));
@@ -565,7 +562,8 @@ function App() {
         color: RISK_COLORS[area.riskLevel],
         isHighRisk: area.riskLevel === 'High' || area.riskLevel === 'Severe',
         isSevereRisk: area.riskLevel === 'Severe',
-        isModerateRisk: area.riskLevel === 'Moderate'
+        isModerateRisk: area.riskLevel === 'Moderate',
+        animationTime: Date.now() / 1000 // Current time for animation calculations
       },
       geometry: area.geometry
     }))
@@ -643,61 +641,37 @@ function App() {
             filter={['all', ['==', ['geometry-type'], 'Point']]}
             paint={{
               'circle-color': ['get', 'color'],
-              'circle-radius': 20,
-              'circle-stroke-color': '#ffffff',
-              'circle-stroke-width': 3,
-              'circle-opacity': [
-                'case',
-                ['get', 'isSevereRisk'], 0.95,
-                ['get', 'isHighRisk'], 0.9,
-                ['get', 'isModerateRisk'], 0.8,
-                0.7
-              ],
-              'circle-stroke-opacity': 1.0
-            }}
-            layout={{
-              'visibility': 'visible'
-            }}
-          />
-          {/* High-risk point overlay for animations */}
-          <Layer
-            id="flood-risk-areas-circle-animated"
-            type="circle"
-            filter={['all', ['==', ['geometry-type'], 'Point'], ['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]]}
-            paint={{
-              'circle-color': ['get', 'color'],
               'circle-radius': [
                 'case',
-                ['get', 'isSevereRisk'], 25,
-                ['get', 'isHighRisk'], 23,
-                22
+                ['get', 'isSevereRisk'], 22,
+                ['get', 'isHighRisk'], 21,
+                ['get', 'isModerateRisk'], 20,
+                18
+              ],
+              'circle-stroke-color': '#ffffff',
+              'circle-stroke-width': [
+                'case',
+                ['get', 'isSevereRisk'], 4,
+                ['get', 'isHighRisk'], 3.5,
+                3
               ],
               'circle-opacity': [
                 'case',
-                ['get', 'isSevereRisk'], 0.4,
-                ['get', 'isHighRisk'], 0.3,
-                0.2
+                ['get', 'isSevereRisk'], [
+                  'case',
+                  ['%', ['round', ['*', ['get', 'animationTime', 0], 10]], 20], ['<', 10], 0.3, 1.0
+                ],
+                ['get', 'isHighRisk'], [
+                  'case', 
+                  ['%', ['round', ['*', ['get', 'animationTime', 0], 6.67]], 20], ['<', 10], 0.4, 1.0
+                ],
+                ['get', 'isModerateRisk'], [
+                  'case',
+                  ['%', ['round', ['*', ['get', 'animationTime', 0], 5]], 20], ['<', 10], 0.6, 1.0
+                ],
+                0.8
               ],
-              'circle-stroke-color': ['get', 'color'],
-              'circle-stroke-width': 2,
-              'circle-stroke-opacity': 0.6
-            }}
-            layout={{
-              'visibility': 'visible'
-            }}
-          />
-          {/* Moderate risk point pulse overlay */}
-          <Layer
-            id="flood-risk-areas-circle-moderate"
-            type="circle"
-            filter={['all', ['==', ['geometry-type'], 'Point'], ['get', 'isModerateRisk']]}
-            paint={{
-              'circle-color': ['get', 'color'],
-              'circle-radius': 22,
-              'circle-opacity': 0.2,
-              'circle-stroke-color': ['get', 'color'],
-              'circle-stroke-width': 1,
-              'circle-stroke-opacity': 0.4
+              'circle-stroke-opacity': 1.0
             }}
             layout={{
               'visibility': 'visible'
@@ -712,28 +686,19 @@ function App() {
               'fill-color': ['get', 'color'],
               'fill-opacity': [
                 'case',
-                ['get', 'isSevereRisk'], 0.6,
-                ['get', 'isHighRisk'], 0.5,
-                ['get', 'isModerateRisk'], 0.4,
-                0.3
-              ]
-            }}
-            layout={{
-              'visibility': 'visible'
-            }}
-          />
-          {/* Polygon animated overlay for high/severe risk */}
-          <Layer
-            id="flood-risk-areas-fill-animated"
-            type="fill"
-            filter={['all', ['==', ['geometry-type'], 'Polygon'], ['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]]}
-            paint={{
-              'fill-color': ['get', 'color'],
-              'fill-opacity': [
-                'case',
-                ['get', 'isSevereRisk'], 0.3,
-                ['get', 'isHighRisk'], 0.2,
-                0.1
+                ['get', 'isSevereRisk'], [
+                  'case',
+                  ['%', ['round', ['*', ['get', 'animationTime', 0], 10]], 20], ['<', 10], 0.2, 0.7
+                ],
+                ['get', 'isHighRisk'], [
+                  'case',
+                  ['%', ['round', ['*', ['get', 'animationTime', 0], 6.67]], 20], ['<', 10], 0.2, 0.6
+                ],
+                ['get', 'isModerateRisk'], [
+                  'case',
+                  ['%', ['round', ['*', ['get', 'animationTime', 0], 5]], 20], ['<', 10], 0.3, 0.5
+                ],
+                0.4
               ]
             }}
             layout={{
@@ -755,8 +720,18 @@ function App() {
               ],
               'line-opacity': [
                 'case',
-                ['get', 'isSevereRisk'], 1.0,
-                ['get', 'isHighRisk'], 0.9,
+                ['get', 'isSevereRisk'], [
+                  'case',
+                  ['%', ['round', ['*', ['get', 'animationTime', 0], 10]], 20], ['<', 10], 0.4, 1.0
+                ],
+                ['get', 'isHighRisk'], [
+                  'case',
+                  ['%', ['round', ['*', ['get', 'animationTime', 0], 6.67]], 20], ['<', 10], 0.4, 1.0
+                ],
+                ['get', 'isModerateRisk'], [
+                  'case',
+                  ['%', ['round', ['*', ['get', 'animationTime', 0], 5]], 20], ['<', 10], 0.5, 0.9
+                ],
                 0.8
               ]
             }}
