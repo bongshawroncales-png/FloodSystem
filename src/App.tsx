@@ -410,6 +410,10 @@ function App() {
     }))
   };
 
+  // Debug: Log the GeoJSON data to console
+  console.log('floodRiskAreasGeoJSON:', floodRiskAreasGeoJSON);
+  console.log('floodRiskAreas state:', floodRiskAreas);
+
   const isDarkTheme = currentLayer === 'streets' || currentLayer === 'terrain' || currentLayer === 'topographic';
   const panelClasses = isDarkTheme 
     ? 'bg-gray-900/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-700/50'
