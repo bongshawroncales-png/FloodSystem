@@ -124,7 +124,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'settings',
       label: 'System Settings',
       icon: Settings,
-      action: () => setActiveSection('settings')
+      action: () => {
+        onShowSettings();
+        setIsOpen(false);
+      }
     }
   ];
 
