@@ -279,28 +279,13 @@ function App() {
     }
   }, []);
 
-  // Apply CSS animations to map layers based on risk levels
+  // Set up animation timer for flashing effects
   useEffect(() => {
     if (!mapRef.current || floodRiskAreas.length === 0) return;
 
     const map = mapRef.current.getMap();
     if (!map) return;
 
-    // Apply glow effects to canvas based on risk levels
-    const canvas = map.getCanvas();
-    const hasHighRisk = floodRiskAreas.some(area => area.riskLevel === 'High');
-    const hasSevereRisk = floodRiskAreas.some(area => area.riskLevel === 'Severe');
-    
-    // Remove existing glow classes
-    canvas.classList.remove('high-risk-glow', 'severe-risk-glow');
-    
-    // Apply appropriate glow effect
-    if (hasSevereRisk) {
-      canvas.classList.add('severe-risk-glow');
-    } else if (hasHighRisk) {
-      canvas.classList.add('high-risk-glow');
-    }
-    // Set up animation timer for flashing effects
     const animationInterval = setInterval(() => {
       // Update the GeoJSON data source to trigger re-rendering with new animation time
       const source = map.getSource('flood-risk-areas');
@@ -321,12 +306,9 @@ function App() {
 
     return () => {
       clearInterval(animationInterval);
-      // Clean up glow effects
-      if (canvas) {
-        canvas.classList.remove('high-risk-glow', 'severe-risk-glow');
-      }
     };
   }, [floodRiskAreas]);
+  
   const handleZoomIn = useCallback(() => {
     setViewState(prev => ({ ...prev, zoom: Math.min(prev.zoom + 1, 20) }));
   }, []);
@@ -667,12 +649,7 @@ function App() {
                 18
               ],
               'circle-stroke-color': '#ffffff',
-              'circle-stroke-width': [
-                'case',
-                ['get', 'isSevereRisk'], 4,
-                ['get', 'isHighRisk'], 3.5,
-                3
-              ],
+              'circle-stroke-width': 3,
               'circle-opacity': [
                 'case',
                 ['get', 'isSevereRisk'], 
@@ -681,19 +658,43 @@ function App() {
                 ['+', 0.75, ['*', 0.25, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]],
                 0.85
               ],
-              'circle-stroke-opacity': [
-                'case',
-                ['get', 'isSevereRisk'], 
-                ['+', 0.8, ['*', 0.2, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]]],
-                ['get', 'isHighRisk'], 
-                ['+', 0.85, ['*', 0.15, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]],
-                1.0
-              ]
+              'circle-stroke-opacity': 1.0
             }}
             layout={{
               'visibility': 'visible'
             }}
           />
+          
+          {/* Glow effect layer for high/severe risk circles */}
+          <Layer
+            id="flood-risk-areas-circle-glow"
+            type="circle"
+            filter={['all', ['==', ['geometry-type'], 'Point'], ['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]]}
+            paint={{
+              'circle-color': [
+                'case',
+                ['get', 'isSevereRisk'], '#EF4444',
+                '#F97316'
+              ],
+              'circle-radius': [
+                'case',
+                ['get', 'isSevereRisk'], 
+                ['+', 30, ['*', 8, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]]],
+                ['+', 28, ['*', 6, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]]
+              ],
+              'circle-opacity': [
+                'case',
+                ['get', 'isSevereRisk'], 
+                ['*', 0.15, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]],
+                ['*', 0.12, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]
+              ],
+              'circle-blur': 1
+            }}
+            layout={{
+              'visibility': 'visible'
+            }}
+          />
+          
           {/* Polygon fill layer */}
           <Layer
             id="flood-risk-areas-fill"
@@ -714,6 +715,30 @@ function App() {
               'visibility': 'visible'
             }}
           />
+          
+          {/* Glow effect layer for high/severe risk polygons */}
+          <Layer
+            id="flood-risk-areas-fill-glow"
+            type="fill"
+            filter={['all', ['==', ['geometry-type'], 'Polygon'], ['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]]}
+            paint={{
+              'fill-color': [
+                'case',
+                ['get', 'isSevereRisk'], '#EF4444',
+                '#F97316'
+              ],
+              'fill-opacity': [
+                'case',
+                ['get', 'isSevereRisk'], 
+                ['*', 0.2, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]],
+                ['*', 0.15, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]
+              ]
+            }}
+            layout={{
+              'visibility': 'visible'
+            }}
+          />
+          
           {/* Polygon outline layer */}
           <Layer
             id="flood-risk-areas-outline"
@@ -721,14 +746,7 @@ function App() {
             filter={['all', ['==', ['geometry-type'], 'Polygon']]}
             paint={{
               'line-color': ['get', 'color'],
-              'line-width': [
-                'case',
-                ['get', 'isSevereRisk'], 
-                ['+', 4, ['*', 1, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]]],
-                ['get', 'isHighRisk'], 
-                ['+', 3.5, ['*', 0.8, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]],
-                3
-              ],
+              'line-width': 3,
               'line-opacity': [
                 'case',
                 ['get', 'isSevereRisk'], 
@@ -737,6 +755,31 @@ function App() {
                 ['+', 0.75, ['*', 0.25, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]],
                 0.8
               ]
+            }}
+            layout={{
+              'visibility': 'visible'
+            }}
+          />
+          
+          {/* Glow effect layer for high/severe risk polygon outlines */}
+          <Layer
+            id="flood-risk-areas-outline-glow"
+            type="line"
+            filter={['all', ['==', ['geometry-type'], 'Polygon'], ['any', ['get', 'isHighRisk'], ['get', 'isSevereRisk']]]}
+            paint={{
+              'line-color': [
+                'case',
+                ['get', 'isSevereRisk'], '#EF4444',
+                '#F97316'
+              ],
+              'line-width': 8,
+              'line-opacity': [
+                'case',
+                ['get', 'isSevereRisk'], 
+                ['*', 0.3, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 4]]]],
+                ['*', 0.25, ['+', 1, ['sin', ['*', ['get', 'animationTime'], 3]]]]
+              ],
+              'line-blur': 2
             }}
             layout={{
               'visibility': 'visible'
