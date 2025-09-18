@@ -315,8 +315,6 @@ function App() {
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         
-        console.log('Loading area data:', data);
-        
         let geometry = data.geometry;
         
         // Parse polygon coordinates back from JSON string
@@ -330,6 +328,12 @@ function App() {
             console.error('Error parsing polygon coordinates:', e);
             return; // Skip this area if coordinates can't be parsed
           }
+        }
+        
+        // Validate coordinates before adding to areas
+        if (!isValidGeometry(geometry)) {
+          console.warn('Skipping area with invalid coordinates:', doc.id, geometry);
+          return;
         }
         
         // Skip areas with empty coordinates
@@ -348,7 +352,6 @@ function App() {
         areas.push(area);
       });
       
-      console.log('Loaded areas with valid coordinates:', areas.length);
       setFloodRiskAreas(areas);
     } catch (error) {
       console.error('Error loading flood risk areas:', error);
@@ -358,6 +361,59 @@ function App() {
       }
     }
   }, []);
+
+  // Function to validate geometry coordinates
+  const isValidGeometry = (geometry: any): boolean => {
+    if (!geometry || !geometry.coordinates) {
+      return false;
+    }
+
+    try {
+      if (geometry.type === 'Point') {
+        const [lng, lat] = geometry.coordinates;
+        return isValidCoordinate(lat, lng);
+      } else if (geometry.type === 'Polygon') {
+        const coordinates = geometry.coordinates;
+        if (!Array.isArray(coordinates) || coordinates.length === 0) {
+          return false;
+        }
+        
+        // Check the outer ring (first array)
+        const outerRing = coordinates[0];
+        if (!Array.isArray(outerRing) || outerRing.length < 3) {
+          return false;
+        }
+        
+        // Validate each coordinate pair in the ring
+        return outerRing.every((coord: any) => {
+          if (!Array.isArray(coord) || coord.length !== 2) {
+            return false;
+          }
+          const [lng, lat] = coord;
+          return isValidCoordinate(lat, lng);
+        });
+      }
+    } catch (error) {
+      console.error('Error validating geometry:', error);
+      return false;
+    }
+    
+    return false;
+  };
+
+  // Function to validate individual coordinate pairs
+  const isValidCoordinate = (lat: number, lng: number): boolean => {
+    return (
+      typeof lat === 'number' && 
+      typeof lng === 'number' && 
+      lat >= -90 && 
+      lat <= 90 && 
+      lng >= -180 && 
+      lng <= 180 &&
+      !isNaN(lat) && 
+      !isNaN(lng)
+    );
+  };
 
   // Save flood risk area to Firebase
   const saveFloodRiskArea = useCallback(async (area: Omit<FloodRiskArea, 'id' | 'createdAt'>) => {
