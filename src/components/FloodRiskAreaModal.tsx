@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, MapPin, Calendar, Droplets, FileText, AlertTriangle, Eye, Zap, Car, Users, Mountain, Layers, Home, Factory, Building, TreePine, Waves, Clock, Shield, Wrench, Cloud, Thermometer, Wind } from 'lucide-react';
 import { FloodRiskArea, AreaType, SlopeType, SoilType, DrainageQuality, SurfaceCover, WaterBodyType, FloodCause, FloodFrequency, FloodCoverage, BuildingType, GroundCondition, FloodLevel } from '../types';
 import { OPENWEATHER_API_KEY, OPENWEATHER_BASE_URL } from '../firebase';
+import { analyzeRisk, mapFloodRiskAreaToAnalysisData, mapRiskResultToFloodLevel } from '../utils/riskAnalysis';
 
 interface FloodRiskAreaModalProps {
   isOpen: boolean;
@@ -256,7 +257,34 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    let finalFormData = { ...formData };
+    
+    // Run risk prediction if enabled
+    if (formData.runPrediction) {
+      try {
+        const { userData, weatherData } = mapFloodRiskAreaToAnalysisData(formData);
+        const riskResult = analyzeRisk(userData, weatherData);
+        const predictedRiskLevel = mapRiskResultToFloodLevel(riskResult);
+        
+        // Update the risk level with the predicted value
+        finalFormData = {
+          ...formData,
+          riskLevel: predictedRiskLevel
+        };
+        
+        console.log('Risk Analysis Result:', {
+          score: riskResult.score,
+          level: riskResult.level,
+          mappedLevel: predictedRiskLevel
+        });
+      } catch (error) {
+        console.error('Error running risk prediction:', error);
+        // Continue with manual risk level if prediction fails
+      }
+    }
+    
+    onSubmit(finalFormData);
     onClose();
   };
 
@@ -985,7 +1013,12 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
 
           {/* Risk Prediction */}
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
+            <h3 className="text-lg font-medium text-gray-800 border-b border-gray-200 pb-2 flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              Risk Assessment
+            </h3>
+            
+            <div className="flex items-center space-x-2 mb-4">
               <input
                 type="checkbox"
                 checked={formData.runPrediction}
@@ -997,6 +1030,25 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
                 Run Flood Risk Prediction for this Area
               </label>
             </div>
+            
+            {!formData.runPrediction && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Manual Risk Level Selection
+                </label>
+                <select
+                  value={formData.riskLevel}
+                  onChange={(e) => setFormData(prev => ({ ...prev, riskLevel: e.target.value as FloodLevel }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="Very Low">Very Low</option>
+                  <option value="Low">Low</option>
+                  <option value="Moderate">Moderate</option>
+                  <option value="High">High</option>
+                  <option value="Severe">Severe</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Submit Buttons */}
