@@ -188,8 +188,8 @@ const RISK_COLORS = {
 
 function App() {
   const [viewState, setViewState] = useState<ViewState>({
-    longitude: 125.4392,
-    latitude: 12.1414,
+    longitude: 125.3575,
+    latitude: 12.1116,
     zoom: 12,
     bearing: 0,
     pitch: 0,
@@ -210,6 +210,53 @@ function App() {
   const [riskAreaPopupPosition, setRiskAreaPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const mapRef = useRef<any>(null);
 
+  // Center coordinates for Oras, Eastern Samar
+  const CENTER_LAT = 12.1116;
+  const CENTER_LNG = 125.3575;
+  const MAX_RADIUS_KM = 3000;
+
+  // Function to calculate distance between two coordinates in kilometers
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Function to constrain coordinates within radius
+  const constrainToRadius = (lat: number, lng: number): { lat: number; lng: number } => {
+    const distance = calculateDistance(CENTER_LAT, CENTER_LNG, lat, lng);
+    
+    if (distance <= MAX_RADIUS_KM) {
+      return { lat, lng };
+    }
+    
+    // Calculate the bearing from center to the point
+    const dLng = (lng - CENTER_LNG) * Math.PI / 180;
+    const lat1Rad = CENTER_LAT * Math.PI / 180;
+    const lat2Rad = lat * Math.PI / 180;
+    
+    const y = Math.sin(dLng) * Math.cos(lat2Rad);
+    const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
+    const bearing = Math.atan2(y, x);
+    
+    // Calculate new coordinates at the maximum radius
+    const R = 6371; // Earth's radius in km
+    const newLat = Math.asin(Math.sin(lat1Rad) * Math.cos(MAX_RADIUS_KM / R) + 
+                            Math.cos(lat1Rad) * Math.sin(MAX_RADIUS_KM / R) * Math.cos(bearing));
+    const newLng = CENTER_LNG * Math.PI / 180 + Math.atan2(Math.sin(bearing) * Math.sin(MAX_RADIUS_KM / R) * Math.cos(lat1Rad),
+                                                          Math.cos(MAX_RADIUS_KM / R) - Math.sin(lat1Rad) * Math.sin(newLat));
+    
+    return {
+      lat: newLat * 180 / Math.PI,
+      lng: newLng * 180 / Math.PI
+    };
+  };
   // Effect to open risk area modal when geometry is ready
   useEffect(() => {
     if (drawingState.pendingGeometry && !showRiskAreaModal) {
@@ -217,6 +264,15 @@ function App() {
     }
   }, [drawingState.pendingGeometry, showRiskAreaModal]);
 
+  // Handle view state changes with radius constraint
+  const handleViewStateChange = useCallback((evt: any) => {
+    const constrainedCoords = constrainToRadius(evt.viewState.latitude, evt.viewState.longitude);
+    setViewState({
+      ...evt.viewState,
+      latitude: constrainedCoords.lat,
+      longitude: constrainedCoords.lng
+    });
+  }, []);
   const handleZoomIn = useCallback(() => {
     setViewState(prev => ({ ...prev, zoom: Math.min(prev.zoom + 1, 20) }));
   }, []);
@@ -481,7 +537,7 @@ function App() {
       <Map
         ref={mapRef}
         {...viewState}
-        onMove={(evt) => setViewState(evt.viewState)}
+        onMove={handleViewStateChange}
         onClick={handleMapClick}
         mapStyle={getCurrentMapStyle()}
         style={{ width: '100%', height: '100%' }}
@@ -492,6 +548,10 @@ function App() {
         touchRotate={true}
         keyboard={true}
         doubleClickZoom={true}
+        maxBounds={[
+          [CENTER_LNG - 27, CENTER_LAT - 27], // Southwest corner (approximately 3000km)
+          [CENTER_LNG + 27, CENTER_LAT + 27]  // Northeast corner (approximately 3000km)
+        ]}
         onMouseEnter={() => {
           if (mapRef.current) {
             mapRef.current.getCanvas().style.cursor = drawingState.currentTool ? 'crosshair' : 'pointer';
