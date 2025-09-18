@@ -19,6 +19,7 @@ import { db } from './firebase';
 import { FloodLevel, DrawingState, FloodRiskArea } from './types';
 import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
 import { FloodRiskAreaPopup } from './components/FloodRiskAreaPopup';
+import { WeatherPanel } from './components/WeatherPanel';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 
@@ -596,6 +597,16 @@ function App() {
 
       {/* Top Right Panel - Map Controls */}
       <div className="absolute top-4 right-4 z-10">
+        {/* Weather Panel */}
+        {showWeather && (
+          <div className="mb-4">
+            <WeatherPanel 
+              coordinates={{ lat: viewState.latitude, lng: viewState.longitude }}
+              isDarkTheme={isDarkTheme}
+            />
+          </div>
+        )}
+        
         <div className={`${panelClasses} p-3`}>
           <div className="flex flex-col gap-2">
             {/* Zoom Controls */}
