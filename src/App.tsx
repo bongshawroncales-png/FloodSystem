@@ -188,9 +188,9 @@ const RISK_COLORS = {
 
 function App() {
   const [viewState, setViewState] = useState<ViewState>({
-    longitude: -74.006,
-    latitude: 40.7128,
-    zoom: 10,
+    longitude: 125.4392,
+    latitude: 12.1414,
+    zoom: 12,
     bearing: 0,
     pitch: 0,
     padding: { top: 0, bottom: 0, left: 0, right: 0 }
@@ -580,7 +580,7 @@ function App() {
               <MapPin className="w-5 h-5 text-white" />
             </div>
             <h1 className={`${textClasses} font-semibold text-lg tracking-tight`}>
-              Earth Explorer
+              Oras Flood Risk System
             </h1>
           </div>
           <div className="relative">
