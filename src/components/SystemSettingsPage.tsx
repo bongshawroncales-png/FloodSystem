@@ -70,27 +70,7 @@ const defaultSettings: SystemSettings = {
 export const SystemSettingsPage: React.FC<SystemSettingsPageProps> = ({ onBack }) => {
   const { user, userRole } = useAuth();
 
-  // Check if user is admin - must be done before any other hooks
-  if (userRole !== 'admin') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-red-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h1>
-          <p className="text-gray-600 mb-6">You don't have permission to access system settings.</p>
-          <button
-            onClick={onBack}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  // All hooks must be called unconditionally at the top level
   const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -115,6 +95,27 @@ export const SystemSettingsPage: React.FC<SystemSettingsPageProps> = ({ onBack }
 
     loadSettings();
   }, []);
+
+  // Check if user is admin - after all hooks are called
+  if (userRole !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-8 h-8 text-red-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-6">You don't have permission to access system settings.</p>
+          <button
+            onClick={onBack}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleSave = async () => {
     setSaving(true);
