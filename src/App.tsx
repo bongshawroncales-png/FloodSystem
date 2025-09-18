@@ -215,6 +215,7 @@ function App() {
   const [hoverTooltipPosition, setHoverTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const mapRef = useRef<any>(null);
 
+  const [showLegend, setShowLegend] = useState(true);
 
   // Center coordinates for Oras, Eastern Samar
   const CENTER_LAT = 12.1113;
@@ -882,15 +883,6 @@ function App() {
             </div>
 
             {/* Location Button */}
-            <button
-              onClick={handleCurrentLocation}
-              className={`p-2.5 ${buttonClasses} hover:bg-blue-500/50 rounded-lg mt-2
-                       ${textClasses} transition-all duration-200 hover:scale-105 active:scale-95`}
-              title="Go to Current Location"
-            >
-              <Crosshair className="w-4 h-4" />
-            </button>
-
             {/* Basemap Selector */}
             <div className="relative">
               <button
@@ -935,7 +927,7 @@ function App() {
       </div>
 
       {/* Live Risk Monitor Panel */}
-      <div className="absolute top-4 right-4 z-20 pointer-events-none" style={{ transform: 'translateX(-410px)' }}>
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none">
         <div className="pointer-events-auto">
           <LiveRiskMonitor 
             onRiskAreasUpdate={loadFloodRiskAreas}
@@ -991,7 +983,21 @@ function App() {
 
       {/* Bottom Left Panel - Coordinates, Zoom & Legend */}
       <div className="absolute bottom-4 left-4 z-10">
-        <div className={`${panelClasses} p-3 space-y-4`}>
+        <div className={`${panelClasses} transition-all duration-300`}>
+          {/* Collapsible Header */}
+          <div className={`p-3 border-b ${isDarkTheme ? 'border-gray-600/50' : 'border-white/20'}`}>
+            <button
+              onClick={() => setShowLegend(!showLegend)}
+              className={`flex items-center justify-between w-full ${textClasses} hover:opacity-80 transition-opacity`}
+            >
+              <span className="font-semibold text-sm">Legend</span>
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showLegend ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          {/* Collapsible Content */}
+          {showLegend && (
+            <div className="p-3 space-y-4">
           {/* Coordinates & Zoom */}
           <div className={`${textClasses} text-sm font-mono space-y-1`}>
             <div className="flex items-center gap-2">
@@ -1076,6 +1082,8 @@ function App() {
               </button>
             )}
           </div>
+            </div>
+          )}
         </div>
       )}
 
