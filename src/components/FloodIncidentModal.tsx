@@ -257,7 +257,7 @@ export const FloodIncidentModal: React.FC<FloodIncidentModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
-          <div className="flex-1 overflow-y-auto p-6 modal-scrollbar">
+          <div className="flex-1 overflow-y-auto p-6 modal-scrollbar" style={{ maxHeight: 'calc(90vh - 200px)' }}>
             {/* Section 0: Core Details */}
             {activeSection === 0 && (
               <div className="space-y-4">
