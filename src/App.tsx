@@ -16,9 +16,9 @@ import {
 } from 'lucide-react';
 import { collection, addDoc, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from './firebase';
-import { FloodReport, FloodLevel, DrawingState, FloodRiskArea } from './types';
-import { FloodReportModal } from './components/FloodReportModal';
+import { FloodLevel, DrawingState, FloodRiskArea } from './types';
 import { FloodRiskAreaModal } from './components/FloodRiskAreaModal';
+import { FloodRiskAreaPopup } from './components/FloodRiskAreaPopup';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 
@@ -191,29 +191,26 @@ function App() {
   });
 
   const [showWeather, setShowWeather] = useState(false);
-  const [showFlood, setShowFlood] = useState(false);
   const [currentLayer, setCurrentLayer] = useState<BasemapKey>('satellite');
   const [showBasemapMenu, setShowBasemapMenu] = useState(false);
-  const [floodReports, setFloodReports] = useState<FloodReport[]>([]);
   const [floodRiskAreas, setFloodRiskAreas] = useState<FloodRiskArea[]>([]);
   const [drawingState, setDrawingState] = useState<DrawingState>({
     isDrawing: false,
     currentTool: null,
     pendingGeometry: null
   });
-  const [showReportModal, setShowReportModal] = useState(false);
   const [showRiskAreaModal, setShowRiskAreaModal] = useState(false);
   const [polygonPoints, setPolygonPoints] = useState<number[][]>([]);
-  const [selectedReport, setSelectedReport] = useState<FloodReport | null>(null);
-  const [popupPosition, setPopupPosition] = useState<{ x: number; y: number } | null>(null);
+  const [selectedRiskArea, setSelectedRiskArea] = useState<FloodRiskArea | null>(null);
+  const [riskAreaPopupPosition, setRiskAreaPopupPosition] = useState<{ x: number; y: number } | null>(null);
   const mapRef = useRef<any>(null);
 
   // Effect to open risk area modal when geometry is ready
   useEffect(() => {
-    if (drawingState.pendingGeometry && !showRiskAreaModal && !showReportModal) {
+    if (drawingState.pendingGeometry && !showRiskAreaModal) {
       setShowRiskAreaModal(true);
     }
-  }, [drawingState.pendingGeometry, showRiskAreaModal, showReportModal]);
+  }, [drawingState.pendingGeometry, showRiskAreaModal]);
 
   const handleZoomIn = useCallback(() => {
     setViewState(prev => ({ ...prev, zoom: Math.min(prev.zoom + 1, 20) }));
@@ -248,57 +245,6 @@ function App() {
     setCurrentLayer(basemap);
     setShowBasemapMenu(false);
   }, []);
-
-  // Load flood reports from Firebase
-  const loadFloodReports = useCallback(async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, 'floodReports'));
-      const reports: FloodReport[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        // Parse geometry coordinates back from JSON string for polygons
-        const report = {
-          id: doc.id,
-          ...data,
-          geometry: {
-            ...data.geometry,
-            coordinates: data.geometry.type === 'Polygon' && typeof data.geometry.coordinates === 'string'
-              ? JSON.parse(data.geometry.coordinates)
-              : data.geometry.coordinates
-          }
-        } as FloodReport;
-        reports.push(report);
-      });
-      setFloodReports(reports);
-    } catch (error) {
-      console.error('Error loading flood reports:', error);
-    }
-  }, []);
-
-  // Save flood report to Firebase
-  const saveFloodReport = useCallback(async (report: Omit<FloodReport, 'id' | 'createdAt'>) => {
-    try {
-      // Serialize polygon coordinates for Firestore compatibility
-      const reportToSave = {
-        ...report,
-        geometry: {
-          ...report.geometry,
-          coordinates: report.geometry.type === 'Polygon' 
-            ? JSON.stringify(report.geometry.coordinates)
-            : report.geometry.coordinates
-        }
-      };
-      
-      const docRef = await addDoc(collection(db, 'floodReports'), {
-        ...reportToSave,
-        createdAt: new Date().toISOString()
-      });
-      loadFloodReports();
-    } catch (error) {
-      console.error('Error saving flood report:', error);
-      alert('Failed to save report. Please try again.');
-    }
-  }, [loadFloodReports]);
 
   // Load flood risk areas from Firebase
   const loadFloodRiskAreas = useCallback(async () => {
@@ -355,16 +301,16 @@ function App() {
     }
   }, [loadFloodRiskAreas]);
 
-  // Delete flood report
-  const deleteFloodReport = useCallback(async (reportId: string) => {
+  // Delete flood risk area
+  const deleteFloodRiskArea = useCallback(async (areaId: string) => {
     try {
-      await deleteDoc(doc(db, 'floodReports', reportId));
-      loadFloodReports();
+      await deleteDoc(doc(db, 'floodRiskAreas', areaId));
+      loadFloodRiskAreas();
     } catch (error) {
-      console.error('Error deleting flood report:', error);
-      alert('Failed to delete report. Please try again.');
+      console.error('Error deleting flood risk area:', error);
+      alert('Failed to delete risk area. Please try again.');
     }
-  }, [loadFloodReports]);
+  }, [loadFloodRiskAreas]);
 
   // Handle drawing tool selection
   const handleDrawingTool = useCallback((tool: 'marker' | 'polygon' | 'delete') => {
@@ -395,14 +341,13 @@ function App() {
       // Handle deletion of existing shapes
       const features = mapRef.current?.queryRenderedFeatures(event.point);
       if (features && features.length > 0) {
-        // Check for flood risk areas
         const riskAreaFeature = features.find((f: any) => f.source === 'flood-risk-areas');
         if (riskAreaFeature && riskAreaFeature.properties?.areaId) {
           deleteFloodRiskArea(riskAreaFeature.properties.areaId);
         }
       }
     }
-  }, [drawingState, deleteFloodReport]);
+  }, [drawingState, deleteFloodRiskArea]);
 
   // Complete polygon drawing
   const completePolygon = useCallback(() => {
@@ -429,36 +374,21 @@ function App() {
 
     const features = mapRef.current?.queryRenderedFeatures(event.point);
     if (features && features.length > 0) {
-      const feature = features.find((f: any) => f.source === 'flood-reports');
-      if (feature && feature.properties?.reportId) {
-        const report = floodReports.find(r => r.id === feature.properties.reportId);
-        if (report) {
-          setSelectedReport(report);
-          setPopupPosition({ x: event.point.x, y: event.point.y });
+      const feature = features.find((f: any) => f.source === 'flood-risk-areas');
+      if (feature && feature.properties?.areaId) {
+        const area = floodRiskAreas.find(a => a.id === feature.properties.areaId);
+        if (area) {
+          setSelectedRiskArea(area);
+          setRiskAreaPopupPosition({ x: event.point.x, y: event.point.y });
         }
       }
     }
-  }, [drawingState.currentTool, floodReports]);
+  }, [drawingState.currentTool, floodRiskAreas]);
 
   // Load reports on component mount
   useEffect(() => {
-    loadFloodReports();
     loadFloodRiskAreas();
-  }, [loadFloodReports, loadFloodRiskAreas]);
-
-  // Create GeoJSON data for flood reports
-  const floodReportsGeoJSON = {
-    type: 'FeatureCollection' as const,
-    features: floodReports.map(report => ({
-      type: 'Feature' as const,
-      properties: {
-        reportId: report.id,
-        riskLevel: report.riskLevel,
-        color: RISK_COLORS[report.riskLevel]
-      },
-      geometry: report.geometry
-    }))
-  };
+  }, [loadFloodRiskAreas]);
 
   // Create GeoJSON data for flood risk areas
   const floodRiskAreasGeoJSON = {
@@ -516,7 +446,8 @@ function App() {
         touchRotate={true}
         keyboard={true}
         doubleClickZoom={true}
-        interactiveLayerIds={['flood-reports-fill', 'flood-reports-circle']}
+        interactiveLayerIds={['flood-risk-areas-fill', 'flood-risk-areas-outline', 'flood-risk-areas-circle', 'flood-risk-areas-labels']}
+        onMouseMove={handleShapeClick}
         onMouseEnter={() => {
           if (mapRef.current) {
             mapRef.current.getCanvas().style.cursor = drawingState.currentTool ? 'crosshair' : 'pointer';
@@ -564,42 +495,21 @@ function App() {
               'circle-opacity': 0.8
             }}
           />
-        </Source>
-
-        {/* Flood Reports Layer */}
-        <Source id="flood-reports" type="geojson" data={floodReportsGeoJSON}>
-          {/* Polygon fill layer */}
+          {/* Labels layer */}
           <Layer
-            id="flood-reports-fill"
-            type="fill"
-            filter={['==', ['geometry-type'], 'Polygon']}
-            paint={{
-              'fill-color': ['get', 'color'],
-              'fill-opacity': 0.3
+            id="flood-risk-areas-labels"
+            type="symbol"
+            layout={{
+              'text-field': ['get', 'name'],
+              'text-font': ['Open Sans Regular'],
+              'text-size': 12,
+              'text-offset': [0, 1],
+              'text-anchor': 'top'
             }}
-          />
-          {/* Polygon outline layer */}
-          <Layer
-            id="flood-reports-outline"
-            type="line"
-            filter={['==', ['geometry-type'], 'Polygon']}
             paint={{
-              'line-color': ['get', 'color'],
-              'line-width': 2,
-              'line-opacity': 0.8
-            }}
-          />
-          {/* Point/marker layer */}
-          <Layer
-            id="flood-reports-circle"
-            type="circle"
-            filter={['==', ['geometry-type'], 'Point']}
-            paint={{
-              'circle-color': ['get', 'color'],
-              'circle-radius': 8,
-              'circle-stroke-color': '#ffffff',
-              'circle-stroke-width': 2,
-              'circle-opacity': 0.8
+              'text-color': '#ffffff',
+              'text-halo-color': '#000000',
+              'text-halo-width': 2
             }}
           />
         </Source>
@@ -780,18 +690,6 @@ function App() {
             >
               <Cloud className="w-4 h-4" />
             </button>
-            
-            <button
-              onClick={() => setShowFlood(!showFlood)}
-              className={`p-2.5 rounded-lg text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
-                showFlood 
-                  ? (isDarkTheme ? 'bg-blue-700/70 hover:bg-blue-700/90' : 'bg-blue-600/60 hover:bg-blue-600/80')
-                  : `${buttonClasses} hover:bg-blue-600/50`
-              }`}
-              title="Toggle Flood Reports"
-            >
-              <Droplets className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </div>
@@ -846,18 +744,10 @@ function App() {
         <div className="absolute top-20 right-4 z-10">
           <div className={`${panelClasses} p-3`}>
             <div className={`${textClasses} text-sm space-y-2`}>
-              {showWeather && (
-                <div className="flex items-center gap-2">
-                  <Cloud className="w-4 h-4 text-blue-400" />
-                  <span>Weather Layer Active</span>
-                </div>
-              )}
-              {showFlood && (
-                <div className="flex items-center gap-2">
-                  <Droplets className={`w-4 h-4 ${isDarkTheme ? 'text-blue-500' : 'text-blue-600'}`} />
-                  <span>Flood Reports Active</span>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                <Cloud className="w-4 h-4 text-blue-400" />
+                <span>Weather Layer Active</span>
+              </div>
             </div>
           </div>
         </div>
@@ -909,14 +799,14 @@ function App() {
         location={`${formatCoordinate(viewState.latitude, false)}, ${formatCoordinate(viewState.longitude, true)}`}
       />
 
-      {/* Flood Report Popup */}
-      {selectedReport && popupPosition && (
-        <FloodReportPopup
-          report={selectedReport}
-          position={popupPosition}
+      {/* Flood Risk Area Popup */}
+      {selectedRiskArea && riskAreaPopupPosition && (
+        <FloodRiskAreaPopup
+          area={selectedRiskArea}
+          position={riskAreaPopupPosition}
           onClose={() => {
-            setSelectedReport(null);
-            setPopupPosition(null);
+            setSelectedRiskArea(null);
+            setRiskAreaPopupPosition(null);
           }}
         />
       )}
