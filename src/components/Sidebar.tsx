@@ -81,10 +81,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <div>
                 <h1 className={`${textClasses} font-semibold text-lg tracking-tight`}>
-                  Oras Flood Risk
+                  Kalaw Flood Monitoring
                 </h1>
                 <p className={`${textClasses} opacity-75 text-xs`}>
-                  Eastern Samar
+                  Kalaw, Oras, Eastern Samar
                 </p>
               </div>
             </div>

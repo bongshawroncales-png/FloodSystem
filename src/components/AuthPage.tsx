@@ -101,7 +101,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack }) => {
         role: 'user', // Default role
         isActive: true,
         createdAt: new Date().toISOString(),
-        location: 'Oras, Eastern Samar'
+        location: 'Kalaw, Oras, Eastern Samar'
       });
 
       onBack(); // Return to main app
@@ -131,7 +131,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack }) => {
         role: 'user', // Default role
         isActive: true,
         createdAt: new Date().toISOString(),
-        location: 'Oras, Eastern Samar',
+        location: 'Kalaw, Oras, Eastern Samar',
         authProvider: 'google'
       }, { merge: true }); // merge: true prevents overwriting existing data
 
@@ -159,7 +159,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onBack }) => {
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </h1>
             <p className="text-blue-100">
-              {isLogin ? 'Sign in to your account' : 'Join the Oras Flood Risk System'}
+              {isLogin ? 'Sign in to your account' : 'Join the Kalaw Flood Monitoring System'}
             </p>
           </div>
         </div>

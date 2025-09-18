@@ -14,7 +14,7 @@ interface LiveRiskMonitorProps {
 // Mock weather simulation data
 const MOCK_WEATHER_SCENARIOS = [
   {
-    name: 'Heavy Rain Storm',
+    name: 'Heavy Rain Storm', 
     rainfall: 65,
     windSpeed: 45,
     temperature: 26,
@@ -26,6 +26,13 @@ const MOCK_WEATHER_SCENARIOS = [
     windSpeed: 85,
     temperature: 24,
     forecastRainfall: 200
+  },
+  {
+    name: 'Super Typhoon',
+    rainfall: 120,
+    windSpeed: 150,
+    temperature: 22,
+    forecastRainfall: 350
   },
   {
     name: 'Moderate Rain',
@@ -80,7 +87,7 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
   isDarkTheme,
   userRole
 }) => {
-  const [isMonitoring, setIsMonitoring] = useState(false);
+  const [isMonitoring, setIsMonitoring] = useState(true); // Auto-start monitoring
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [currentScenario, setCurrentScenario] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);

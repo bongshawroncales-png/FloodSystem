@@ -15,6 +15,7 @@ const FLOOD_CAUSES = [
   'Dam release',
   'Storm surge',
   'Typhoon',
+  'Super Typhoon',
   'Monsoon',
   'River overflow',
   'Flash flood',

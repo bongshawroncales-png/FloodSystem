@@ -197,7 +197,7 @@ const RISK_COLORS = {
 };
 
 function App() {
-  const { user, userRole } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const [showAuthPage, setShowAuthPage] = useState(false);
   const [showAdminPage, setShowAdminPage] = useState(false);
   const [showIncidentsPage, setShowIncidentsPage] = useState(false);
@@ -693,6 +693,23 @@ function App() {
   const getCurrentMapStyle = () => {
     return BASEMAPS[currentLayer].style;
   };
+
+  // Show loading screen while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading Kalaw Flood Monitoring System...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Require authentication to access main page
+  if (!user) {
+    return <AuthPage onBack={() => {}} />;
+  }
 
   // Show auth page if not authenticated
   if (showAuthPage) {
