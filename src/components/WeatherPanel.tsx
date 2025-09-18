@@ -64,75 +64,25 @@ const getWeatherIcon = (main: string, description: string) => {
 
 const fetchWeatherData = async (lat: number, lng: number): Promise<WeatherData | null> => {
   try {
-    if (!OPENWEATHER_API_KEY) {
-      console.warn('OpenWeatherMap API key not found. Using fallback weather data.');
-      return {
-        current: {
-          temp: 28,
-          feels_like: 32,
-          humidity: 75,
-          pressure: 1013,
-          visibility: 10000,
-          wind_speed: 3.5,
-          wind_deg: 180,
-          weather: [{
-            main: 'Clouds',
-            description: 'partly cloudy',
-            icon: '02d'
-          }],
-          rain: { '1h': 0 }
-        },
-        daily: [
-          {
-            dt: Date.now() / 1000,
-            temp: { day: 28, min: 24, max: 32 },
-            weather: [{ main: 'Clouds', description: 'partly cloudy', icon: '02d' }],
-            pop: 0.3
-          },
-          {
-            dt: (Date.now() / 1000) + 86400,
-            temp: { day: 29, min: 25, max: 33 },
-            weather: [{ main: 'Rain', description: 'light rain', icon: '10d' }],
-            pop: 0.6,
-            rain: { '1h': 2.5 }
-          },
-          {
-            dt: (Date.now() / 1000) + 172800,
-            temp: { day: 27, min: 23, max: 31 },
-            weather: [{ main: 'Clear', description: 'clear sky', icon: '01d' }],
-            pop: 0.1
-          },
-          {
-            dt: (Date.now() / 1000) + 259200,
-            temp: { day: 30, min: 26, max: 34 },
-            weather: [{ main: 'Clouds', description: 'scattered clouds', icon: '03d' }],
-            pop: 0.2
-          },
-          {
-            dt: (Date.now() / 1000) + 345600,
-            temp: { day: 28, min: 24, max: 32 },
-            weather: [{ main: 'Rain', description: 'moderate rain', icon: '10d' }],
-            pop: 0.8,
-            rain: { '1h': 5.2 }
-          }
-        ]
-      };
-    }
+    // Debug: Check if API key is loaded
+    console.log('API Key loaded:', OPENWEATHER_API_KEY ? 'Yes' : 'No');
+    console.log('API Key value:', OPENWEATHER_API_KEY);
     
-    if (OPENWEATHER_API_KEY === 'your_api_key_here') {
-      console.warn('Please replace the placeholder API key with your actual OpenWeatherMap API key.');
-      return null;
+    if (!OPENWEATHER_API_KEY) {
+      throw new Error('OpenWeatherMap API key not found. Please check your .env file.');
     }
     
     // Fetch current weather
     const currentWeatherResponse = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric`
     );
+    console.log('Current weather API URL:', `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric`);
     
     if (!currentWeatherResponse.ok) {
       throw new Error(`Current weather API error: ${currentWeatherResponse.status}`);
     }
     const currentWeatherData = await currentWeatherResponse.json();
+    console.log('Current weather data received:', currentWeatherData);
     
     // Fetch 5-day forecast
     const forecastResponse = await fetch(
@@ -142,6 +92,7 @@ const fetchWeatherData = async (lat: number, lng: number): Promise<WeatherData |
       throw new Error(`Forecast API error: ${forecastResponse.status}`);
     }
     const forecastData = await forecastResponse.json();
+    console.log('Forecast data received:', forecastData);
     
     // Process forecast data - group by day
     const dailyForecasts: { [key: string]: any[] } = {};
