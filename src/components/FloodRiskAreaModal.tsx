@@ -218,8 +218,8 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
       [section]: {
         ...prev[section as keyof typeof prev],
         [field]: checked
-          ? [...(prev[section as keyof typeof prev] as any)[field], value]
-          : (prev[section as keyof typeof prev] as any)[field].filter((item: string) => item !== value)
+          ? [...((prev[section as keyof typeof prev] as any)[field] || []), value]
+          : ((prev[section as keyof typeof prev] as any)[field] || []).filter((item: string) => item !== value)
       }
     }));
   };
