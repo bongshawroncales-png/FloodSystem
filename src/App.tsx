@@ -24,6 +24,7 @@ import { Sidebar } from './components/Sidebar';
 import { useAuth } from './hooks/useAuth';
 import { WeatherPanel } from './components/WeatherPanel';
 import { LiveRiskMonitor } from './components/LiveRiskMonitor';
+import { AuthPage } from './components/AuthPage';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 
@@ -192,6 +193,7 @@ const RISK_COLORS = {
 
 function App() {
   const { user } = useAuth();
+  const [showAuthPage, setShowAuthPage] = useState(false);
   const [viewState, setViewState] = useState<ViewState>({
     longitude: 125.375,
     latitude: 12.1116,
@@ -649,6 +651,11 @@ function App() {
     return BASEMAPS[currentLayer].style;
   };
 
+  // Show auth page if not authenticated
+  if (showAuthPage) {
+    return <AuthPage onBack={() => setShowAuthPage(false)} />;
+  }
+
   return (
     <div className="relative w-full h-screen overflow-hidden">
       <Map
@@ -868,6 +875,7 @@ function App() {
         onAreaSelect={handleAreaSelect}
         onAreaDelete={deleteFloodRiskArea}
         isDarkTheme={isDarkTheme}
+        onShowAuth={() => setShowAuthPage(true)}
       />
 
       {/* Top Right Panel - Map Controls */}

@@ -8,13 +8,15 @@ interface SidebarProps {
   onAreaSelect: (area: FloodRiskArea) => void;
   onAreaDelete: (areaId: string) => void;
   isDarkTheme: boolean;
+  onShowAuth: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   floodRiskAreas,
   onAreaSelect,
   onAreaDelete,
-  isDarkTheme
+  isDarkTheme,
+  onShowAuth
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, loading, signInWithGoogle, logout } = useAuth();
@@ -135,11 +137,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </div>
                 <button
-                  onClick={signInWithGoogle}
+                  onClick={onShowAuth}
                   className={`w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600/80 hover:bg-blue-600 rounded-lg text-white text-xs transition-colors`}
                 >
                   <LogIn className="w-3 h-3" />
-                  Sign in with Google
+                  Sign In / Register
                 </button>
               </div>
             )}
