@@ -11,11 +11,30 @@ interface LiveRiskMonitorProps {
 // Fetch current weather data for coordinates
 const fetchCurrentWeather = async (lat: number, lng: number) => {
   try {
+    // Check if API key is available
+    if (!OPENWEATHER_API_KEY) {
+      throw new Error('OpenWeatherMap API key is not configured. Please check your .env file for VITE_OPENWEATHER_API_KEY.');
+    }
+    
+    // Validate API key format (should be 32 characters alphanumeric)
+    if (OPENWEATHER_API_KEY.length !== 32 || !/^[a-f0-9]{32}$/.test(OPENWEATHER_API_KEY)) {
+      console.warn('API key format may be invalid. Expected 32 character hexadecimal string.');
+    }
+    
     const response = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric`
     );
     
-    if (!response.ok) throw new Error(`Weather API error: ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Weather API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        response: errorText,
+        url: response.url
+      });
+      throw new Error(`Weather API error: ${response.status} - ${response.statusText}. ${errorText}`);
+    }
     
     const data = await response.json();
     
@@ -34,11 +53,24 @@ const fetchCurrentWeather = async (lat: number, lng: number) => {
 // Fetch forecast data
 const fetchForecastWeather = async (lat: number, lng: number) => {
   try {
+    if (!OPENWEATHER_API_KEY) {
+      throw new Error('OpenWeatherMap API key is not configured. Please check your .env file for VITE_OPENWEATHER_API_KEY.');
+    }
+    
     const response = await fetch(
       `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric`
     );
     
-    if (!response.ok) throw new Error(`Forecast API error: ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Forecast API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        response: errorText,
+        url: response.url
+      });
+      throw new Error(`Forecast API error: ${response.status} - ${response.statusText}. ${errorText}`);
+    }
     
     const data = await response.json();
     
@@ -118,6 +150,12 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({ onRiskUpdate }
 
   const monitorAllAreas = useCallback(async () => {
     try {
+      // Check API key before starting monitoring
+      if (!OPENWEATHER_API_KEY) {
+        console.error('Cannot start monitoring: OpenWeatherMap API key is not configured.');
+        return;
+      }
+      
       console.log('Running live risk monitoring...');
       
       // Get all flood risk areas
