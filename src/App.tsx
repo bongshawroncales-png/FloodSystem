@@ -30,6 +30,7 @@ import { LiveRiskMonitor } from './components/LiveRiskMonitor';
 import { collection as firestoreCollection, addDoc as firestoreAddDoc } from 'firebase/firestore';
 import { AuthPage } from './components/AuthPage';
 import { AdminPage } from './components/AdminPage';
+import { ConfirmationModal } from './components/ConfirmationModal';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 
@@ -228,6 +229,15 @@ function App() {
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [selectedAreaForIncident, setSelectedAreaForIncident] = useState<FloodRiskArea | null>(null);
   const mapRef = useRef<any>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    areaId: string;
+    areaName: string;
+  }>({
+    isOpen: false,
+    areaId: '',
+    areaName: ''
+  });
 
 
   // Center coordinates for Oras, Eastern Samar
@@ -450,21 +460,29 @@ function App() {
   }, [loadFloodRiskAreas]);
 
   // Delete flood risk area
-  const deleteFloodRiskArea = useCallback(async (areaId: string) => {
-    // Check if user has permission to delete
-    if (userRole !== 'admin' && userRole !== 'authorized') {
-      alert('You need authorization privileges to delete areas. Please contact an administrator.');
-      return;
-    }
-    
+  const handleDeleteAreaClick = useCallback((areaId: string, areaName: string) => {
+    setDeleteConfirmation({
+      isOpen: true,
+      areaId,
+      areaName
+    });
+  }, []);
+
+  const handleDeleteAreaConfirm = useCallback(async () => {
     try {
-      await deleteDoc(doc(db, 'floodRiskAreas', areaId));
+      await deleteDoc(doc(db, 'floodRiskAreas', deleteConfirmation.areaId));
       loadFloodRiskAreas();
     } catch (error) {
       console.error('Error deleting flood risk area:', error);
       alert('Failed to delete risk area. Please try again.');
     }
-  }, [loadFloodRiskAreas, userRole]);
+    
+    setDeleteConfirmation({
+      isOpen: false,
+      areaId: '',
+      areaName: ''
+    });
+  }, [loadFloodRiskAreas, deleteConfirmation.areaId]);
 
   // Handle drawing tool selection
   const handleDrawingTool = useCallback((tool: 'marker' | 'polygon' | 'delete') => {
@@ -507,11 +525,17 @@ function App() {
       if (features && features.length > 0) {
         const riskAreaFeature = features.find((f: any) => f.source === 'flood-risk-areas');
         if (riskAreaFeature && riskAreaFeature.properties?.areaId) {
-          deleteFloodRiskArea(riskAreaFeature.properties.areaId);
+          // Check permissions before allowing delete
+          if (userRole === 'admin' || userRole === 'authorized') {
+            const area = floodRiskAreas.find(a => a.id === riskAreaFeature.properties.areaId);
+            if (area) {
+              handleDeleteAreaClick(area.id!, area.basicInfo.name);
+            }
+          }
         }
       }
     }
-  }, [drawingState, deleteFloodRiskArea]);
+  }, [drawingState, handleDeleteAreaClick, userRole, floodRiskAreas]);
 
   // Complete polygon drawing
   const completePolygon = useCallback(() => {
@@ -943,7 +967,12 @@ function App() {
       <Sidebar
         floodRiskAreas={floodRiskAreas}
         onAreaSelect={handleAreaSelect}
-        onAreaDelete={deleteFloodRiskArea}
+        onAreaDelete={(areaId: string) => {
+          const area = floodRiskAreas.find(a => a.id === areaId);
+          if (area) {
+            handleDeleteAreaClick(areaId, area.basicInfo.name);
+          }
+        }}
         isDarkTheme={isDarkTheme}
         onShowAuth={() => setShowAuthPage(true)}
         onShowAdmin={() => setShowAdminPage(true)}
@@ -1245,6 +1274,18 @@ function App() {
           position={hoverTooltipPosition}
         />
       )}
+
+      {/* Delete Area Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ isOpen: false, areaId: '', areaName: '' })}
+        onConfirm={handleDeleteAreaConfirm}
+        title="Delete Flood Risk Area"
+        message={`Are you sure you want to delete "${deleteConfirmation.areaName}"? This action cannot be undone and will permanently remove all associated data including risk assessments and historical records.`}
+        type="delete"
+        confirmText="Delete Area"
+        cancelText="Keep Area"
+      />
     </div>
   );
 }
