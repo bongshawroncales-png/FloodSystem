@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, MapPin, Calendar, User, AlertTriangle, Eye, Edit, History, Filter, ChevronDown, Trash2, Download } from 'lucide-react';
+import { ArrowLeft, Search, MapPin, Calendar, User, AlertTriangle, Eye, Edit, History, Filter, ChevronDown, Trash2, Download, Users, Home, Cloud, Shield } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { FloodIncident } from '../types';
@@ -1621,6 +1621,7 @@ const IncidentEditForm: React.FC<{
           onClick={() => setActiveSection(Math.max(0, activeSection - 1))}
           disabled={activeSection === 0}
           className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           Previous
         </button>
         
