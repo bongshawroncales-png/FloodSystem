@@ -353,6 +353,7 @@ function App() {
 
   // Handle map click for drawing
   const handleMapClick = useCallback((event: any) => {
+    console.log('Map click detected, current tool:', drawingState.currentTool);
     if (!drawingState.currentTool) return;
 
     const { lng, lat } = event.lngLat;
@@ -795,20 +796,28 @@ function App() {
       {/* Drawing Instructions */}
       {drawingState.currentTool && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-          <div className={`${panelClasses} p-4 max-w-sm`}>
+          <div className={`${panelClasses} p-4 max-w-sm border-2 border-yellow-400 animate-pulse`}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-3 h-3 bg-yellow-400 rounded-full animate-ping"></div>
+              <span className={`${textClasses} font-semibold text-sm`}>Drawing Mode Active</span>
+            </div>
             <p className={`${textClasses} text-sm text-center`}>
               {drawingState.currentTool === 'marker' && 'Click on the map to add a flood-prone point'}
               {drawingState.currentTool === 'polygon' && (
                 <>
                   Click to add points for flood-prone area ({polygonPoints.length} points added).
                   <br />
-                  Double-click to finish polygon (minimum 3 points).
+                  Click "Finish Area" button when done (minimum 3 points).
                 </>
               )}
               {drawingState.currentTool === 'delete' && 'Click on any flood-prone area to delete it'}
             </p>
             <button
-              onClick={() => setDrawingState({ isDrawing: false, currentTool: null, pendingGeometry: null })}
+              onClick={() => {
+                console.log('Canceling drawing mode');
+                setDrawingState({ isDrawing: false, currentTool: null, pendingGeometry: null });
+                setPolygonPoints([]);
+              }}
               className={`mt-2 w-full px-3 py-1.5 ${buttonClasses} rounded-lg ${textClasses} text-sm transition-colors`}
             >
               Cancel
@@ -818,7 +827,7 @@ function App() {
                 onClick={completePolygon}
                 className={`mt-2 w-full px-3 py-1.5 bg-green-500/60 hover:bg-green-500/80 rounded-lg ${textClasses} text-sm transition-colors`}
               >
-                Finish Area
+                Finish Area ({polygonPoints.length} points)
               </button>
             )}
           </div>
