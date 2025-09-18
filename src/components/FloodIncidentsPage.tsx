@@ -397,7 +397,7 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
           email: user.email!,
           displayName: user.displayName!
         },
-        changes: `Updated: ${Object.keys(updatedIncident).filter(key => key !== 'editHistory').join(', ')}`
+        changes: Object.keys(updatedIncident).join(', ')
       };
 
       await updateDoc(doc(db, 'floodIncidents', selectedIncident.id!), {
@@ -414,9 +414,6 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
       setIncidents(updatedIncidents);
       setSelectedIncident({ ...selectedIncident, ...updatedIncident, editHistory: [...editHistory, newEdit] });
       setIsEditing(false);
-      
-      // Show success message
-      alert('Incident updated successfully!');
     } catch (error) {
       console.error('Error updating incident:', error);
       alert('Failed to update incident');
@@ -943,23 +940,15 @@ const IncidentDetailsView: React.FC<{ incident: FloodIncident; showEditHistory: 
       {/* Edit History */}
       {showEditHistory && incident.editHistory && incident.editHistory.length > 0 && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            📝 Edit History ({incident.editHistory.length} edit{incident.editHistory.length > 1 ? 's' : ''})
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Edit History</label>
           <div className="space-y-2">
-            {incident.editHistory.slice().reverse().map((edit, index) => (
+            {incident.editHistory.map((edit, index) => (
               <div key={index} className="bg-gray-50 p-3 rounded-lg">
                 <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <User className="w-3 h-3 text-blue-600" />
-                    </div>
-                    <span className="text-sm font-medium text-gray-700">{edit.editedBy.displayName}</span>
-                  </div>
+                  <span className="text-sm font-medium text-gray-700">{edit.editedBy.displayName}</span>
                   <span className="text-xs text-gray-500">{new Date(edit.editedAt).toLocaleString()}</span>
                 </div>
-                <p className="text-sm text-gray-600 ml-8">{edit.changes}</p>
-                <p className="text-xs text-gray-500 ml-8">by {edit.editedBy.email}</p>
+                <p className="text-sm text-gray-600">Modified: {edit.changes}</p>
               </div>
             ))}
           </div>
