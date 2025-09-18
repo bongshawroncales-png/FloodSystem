@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Search, MapPin, Calendar, User, AlertTriangle, Eye, Edit, History, Filter, ChevronDown } from 'lucide-react';
-import { collection, getDocs, doc, updateDoc, query, orderBy } from 'firebase/firestore';
+import { ArrowLeft, Search, MapPin, Calendar, User, AlertTriangle, Eye, Edit, History, Filter, ChevronDown, Trash2, Download } from 'lucide-react';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { FloodIncident } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -21,6 +21,303 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
   const [filterStatus, setFilterStatus] = useState<'All' | 'Pending' | 'Confirmed' | 'Resolved'>('All');
   const [filterSeverity, setFilterSeverity] = useState<'All' | 'Low' | 'Medium' | 'High' | 'Critical'>('All');
 
+  // Delete incident
+  const handleDeleteIncident = async (incidentId: string, incidentTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${incidentTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteDoc(doc(db, 'floodIncidents', incidentId));
+      setIncidents(prev => prev.filter(incident => incident.id !== incidentId));
+      
+      // Close modal if the deleted incident was selected
+      if (selectedIncident?.id === incidentId) {
+        setSelectedIncident(null);
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error('Error deleting incident:', error);
+      alert('Failed to delete incident. Please try again.');
+    }
+  };
+
+  // Generate and download PDF report
+  const generatePDFReport = (incident: FloodIncident) => {
+    // Create HTML content for PDF
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Flood Incident Report - ${incident.title}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; color: #333; }
+          .header { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
+          .header h1 { color: #2563eb; margin: 0; font-size: 24px; }
+          .header p { margin: 5px 0; color: #666; }
+          .section { margin-bottom: 25px; }
+          .section h2 { color: #1f2937; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 15px; font-size: 18px; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+          .info-item { margin-bottom: 10px; }
+          .info-label { font-weight: bold; color: #374151; }
+          .info-value { margin-left: 10px; }
+          .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+          .status-pending { background-color: #fef3c7; color: #92400e; }
+          .status-confirmed { background-color: #d1fae5; color: #065f46; }
+          .status-resolved { background-color: #dbeafe; color: #1e40af; }
+          .severity-low { background-color: #d1fae5; color: #065f46; }
+          .severity-medium { background-color: #fef3c7; color: #92400e; }
+          .severity-high { background-color: #fed7aa; color: #9a3412; }
+          .severity-critical { background-color: #fecaca; color: #991b1b; }
+          .list-item { margin: 5px 0; padding-left: 15px; }
+          .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>FLOOD INCIDENT REPORT</h1>
+          <p><strong>Oras Eastern Samar Flood Risk System</strong></p>
+          <p>Generated on: ${new Date().toLocaleString()}</p>
+        </div>
+
+        <div class="section">
+          <h2>📍 Core Incident Details</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Incident ID:</span>
+              <span class="info-value">${incident.incidentId || incident.id}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Title:</span>
+              <span class="info-value">${incident.title}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Severity:</span>
+              <span class="info-value status-badge severity-${incident.severity.toLowerCase()}">${incident.severity}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Status:</span>
+              <span class="info-value status-badge status-${incident.status.toLowerCase()}">${incident.status}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Location:</span>
+              <span class="info-value">${incident.location}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Barangay:</span>
+              <span class="info-value">${incident.barangay || 'Not specified'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Municipality:</span>
+              <span class="info-value">${incident.municipality || 'Not specified'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Province:</span>
+              <span class="info-value">${incident.province || 'Not specified'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">GPS Coordinates:</span>
+              <span class="info-value">${incident.gpsCoordinates || 'Not available'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Cause/Trigger:</span>
+              <span class="info-value">${incident.cause || 'Not specified'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Onset Date/Time:</span>
+              <span class="info-value">${incident.onsetDateTime ? new Date(incident.onsetDateTime).toLocaleString() : 'Not specified'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">End Date/Time:</span>
+              <span class="info-value">${incident.endDateTime ? new Date(incident.endDateTime).toLocaleString() : 'Not specified'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Flood Depth:</span>
+              <span class="info-value">${incident.floodDepth ? incident.floodDepth + 'm' : 'Not measured'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Duration:</span>
+              <span class="info-value">${incident.duration || 'Not specified'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Area Extent:</span>
+              <span class="info-value">${incident.areaExtent || 'Not specified'}</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Description:</span>
+            <div style="margin-top: 10px; padding: 10px; background-color: #f9fafb; border-radius: 4px;">
+              ${incident.description}
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>👥 Human Impact</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Total Population Affected:</span>
+              <span class="info-value">${incident.affectedPopulation || 0}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Evacuated/Displaced People:</span>
+              <span class="info-value">${incident.evacuatedPeople || 0}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Casualties - Dead:</span>
+              <span class="info-value">${incident.casualties?.dead || 0}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Casualties - Missing:</span>
+              <span class="info-value">${incident.casualties?.missing || 0}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Casualties - Injured:</span>
+              <span class="info-value">${incident.casualties?.injured || 0}</span>
+            </div>
+          </div>
+          ${incident.vulnerableGroupsAffected && incident.vulnerableGroupsAffected.length > 0 ? `
+            <div class="info-item">
+              <span class="info-label">Vulnerable Groups Affected:</span>
+              <div style="margin-top: 5px;">
+                ${incident.vulnerableGroupsAffected.map(group => `<div class="list-item">• ${group}</div>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="section">
+          <h2>🏠 Property & Infrastructure Impact</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Houses Damaged:</span>
+              <span class="info-value">${incident.housesDamaged || 0}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Houses Destroyed:</span>
+              <span class="info-value">${incident.housesDestroyed || 0}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Economic Damages:</span>
+              <span class="info-value">${incident.economicDamages ? '₱' + incident.economicDamages.toLocaleString() : 'Not assessed'}</span>
+            </div>
+          </div>
+          ${incident.infrastructureAffected && incident.infrastructureAffected.length > 0 ? `
+            <div class="info-item">
+              <span class="info-label">Infrastructure Affected:</span>
+              <div style="margin-top: 5px;">
+                ${incident.infrastructureAffected.map(infra => `<div class="list-item">• ${infra}</div>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+          ${incident.agricultureLosses ? `
+            <div class="info-item">
+              <span class="info-label">Agriculture & Livelihood Losses:</span>
+              <div style="margin-top: 10px; padding: 10px; background-color: #f9fafb; border-radius: 4px;">
+                ${incident.agricultureLosses}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="section">
+          <h2>🌧️ Environmental & Weather Context</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Rainfall Data:</span>
+              <span class="info-value">${incident.rainfallData || 'Not available'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">River Level:</span>
+              <span class="info-value">${incident.riverLevel || 'Not monitored'}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Weather Event:</span>
+              <span class="info-value">${incident.weatherEvent || 'Not specified'}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>🚨 Response & Actions</h2>
+          ${incident.respondingAgencies && incident.respondingAgencies.length > 0 ? `
+            <div class="info-item">
+              <span class="info-label">Responding Agencies:</span>
+              <div style="margin-top: 5px;">
+                ${incident.respondingAgencies.map(agency => `<div class="list-item">• ${agency}</div>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+          ${incident.evacuationCenters ? `
+            <div class="info-item">
+              <span class="info-label">Evacuation Centers Used:</span>
+              <div style="margin-top: 10px; padding: 10px; background-color: #f9fafb; border-radius: 4px;">
+                ${incident.evacuationCenters}
+              </div>
+            </div>
+          ` : ''}
+          ${incident.reliefProvided ? `
+            <div class="info-item">
+              <span class="info-label">Relief Provided:</span>
+              <div style="margin-top: 10px; padding: 10px; background-color: #f9fafb; border-radius: 4px;">
+                ${incident.reliefProvided}
+              </div>
+            </div>
+          ` : ''}
+          ${incident.challengesEncountered ? `
+            <div class="info-item">
+              <span class="info-label">Challenges Encountered:</span>
+              <div style="margin-top: 10px; padding: 10px; background-color: #f9fafb; border-radius: 4px;">
+                ${incident.challengesEncountered}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="section">
+          <h2>📋 Report Information</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Reported By:</span>
+              <span class="info-value">${incident.reportedBy.displayName} (${incident.reportedBy.email})</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Report Date:</span>
+              <span class="info-value">${new Date(incident.createdAt).toLocaleString()}</span>
+            </div>
+            ${incident.confirmedBy ? `
+              <div class="info-item">
+                <span class="info-label">Confirmed By:</span>
+                <span class="info-value">${incident.confirmedBy.displayName} (${incident.confirmedBy.email})</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Confirmation Date:</span>
+                <span class="info-value">${new Date(incident.confirmedAt!).toLocaleString()}</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>This report was generated by the Oras Eastern Samar Flood Risk System</p>
+          <p>For official use and disaster response coordination</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Create blob and download
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Flood_Incident_Report_${incident.incidentId || incident.id}_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
   // Load incidents
   useEffect(() => {
     const loadIncidents = async () => {
@@ -276,17 +573,33 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
                     >
                       <Eye className="w-5 h-5" />
                     </button>
+                    <button
+                      onClick={() => generatePDFReport(incident)}
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Download PDF Report"
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
                     {(userRole === 'admin' || userRole === 'authorized') && (
-                      <button
-                        onClick={() => {
-                          setSelectedIncident(incident);
-                          setIsEditing(true);
-                        }}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                        title="Edit Incident"
-                      >
-                        <Edit className="w-5 h-5" />
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            setSelectedIncident(incident);
+                            setIsEditing(true);
+                          }}
+                          className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                          title="Edit Incident"
+                        >
+                          <Edit className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteIncident(incident.id!, incident.title)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Incident"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
