@@ -740,7 +740,7 @@ function App() {
         </div>
       </div>
 
-      {(showWeather || showFlood) && (
+      {showWeather && (
         <div className="absolute top-20 right-4 z-10">
           <div className={`${panelClasses} p-3`}>
             <div className={`${textClasses} text-sm space-y-2`}>
