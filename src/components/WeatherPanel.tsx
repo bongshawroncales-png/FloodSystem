@@ -64,16 +64,98 @@ const getWeatherIcon = (main: string, description: string) => {
 
 const fetchWeatherData = async (lat: number, lng: number): Promise<WeatherData | null> => {
   try {
-    // Using One Call API 2.5 (free tier allows 1000 calls/day)
-    const url = `https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric&exclude=minutely,hourly,alerts`;
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Weather API error: ${response.status}`);
+    // Fetch current weather
+    const currentWeatherResponse = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric`
+    );
+    if (!currentWeatherResponse.ok) {
+      throw new Error(`Current weather API error: ${currentWeatherResponse.status}`);
     }
+    const currentWeatherData = await currentWeatherResponse.json();
     
-    const data = await response.json();
-    return data;
+    // Fetch 5-day forecast
+    const forecastResponse = await fetch(
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lng}&appid=${OPENWEATHER_API_KEY}&units=metric`
+    );
+    if (!forecastResponse.ok) {
+      throw new Error(`Forecast API error: ${forecastResponse.status}`);
+    }
+    const forecastData = await forecastResponse.json();
+    
+    // Process forecast data - group by day
+    const dailyForecasts: { [key: string]: any[] } = {};
+    forecastData.list.forEach((item: any) => {
+      const date = new Date(item.dt * 1000);
+      const dateKey = date.toDateString();
+      if (!dailyForecasts[dateKey]) {
+        dailyForecasts[dateKey] = [];
+      }
+      dailyForecasts[dateKey].push(item);
+    });
+    
+    // Create forecast days (take first 5 days)
+    const daily = Object.keys(dailyForecasts)
+      .slice(0, 5)
+      .map((dateKey) => {
+        const dayData = dailyForecasts[dateKey];
+        const date = new Date(dateKey);
+        
+        // Calculate aggregates
+        const temps = dayData.map((item: any) => item.main.temp);
+        const precipitations = dayData.map((item: any) => item.rain?.['3h'] || 0);
+        
+        // Get most common weather condition
+        const conditions = dayData.map((item: any) => ({
+          main: item.weather[0].main,
+          description: item.weather[0].description,
+          icon: item.weather[0].icon
+        }));
+        
+        // Use the condition from midday or first one
+        const middayCondition = conditions.find((_, idx) => {
+          const hour = new Date(dayData[idx].dt * 1000).getHours();
+          return hour >= 11 && hour <= 13;
+        }) || conditions[0];
+        
+        // Calculate probability of precipitation
+        const pop = precipitations.some(p => p > 0) ? 0.5 : 0;
+        
+        return {
+          dt: date.getTime() / 1000,
+          temp: {
+            day: Math.round(temps.reduce((sum, t) => sum + t, 0) / temps.length),
+            min: Math.round(Math.min(...temps)),
+            max: Math.round(Math.max(...temps))
+          },
+          weather: [{
+            main: middayCondition.main,
+            description: middayCondition.description,
+            icon: middayCondition.icon
+          }],
+          pop: pop,
+          rain: precipitations.some(p => p > 0) ? { '1h': Math.max(...precipitations) } : undefined
+        };
+      });
+    
+    // Return data in the expected format
+    return {
+      current: {
+        temp: currentWeatherData.main.temp,
+        feels_like: currentWeatherData.main.feels_like,
+        humidity: currentWeatherData.main.humidity,
+        pressure: currentWeatherData.main.pressure,
+        visibility: currentWeatherData.visibility || 10000,
+        wind_speed: currentWeatherData.wind.speed,
+        wind_deg: currentWeatherData.wind.deg || 0,
+        weather: [{
+          main: currentWeatherData.weather[0].main,
+          description: currentWeatherData.weather[0].description,
+          icon: currentWeatherData.weather[0].icon
+        }],
+        rain: currentWeatherData.rain
+      },
+      daily: daily
+    };
   } catch (error) {
     console.error('Error fetching weather data:', error);
     return null;
