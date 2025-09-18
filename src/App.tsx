@@ -497,28 +497,6 @@ function App() {
           }
         }}
       >
-        {/* Add a click handler layer for shape interactions */}
-        <Source id="click-handler" type="geojson" data={floodRiskAreasGeoJSON}>
-          <Layer
-            id="click-handler-layer"
-            type="fill"
-            paint={{
-              'fill-opacity': 0
-            }}
-            onClick={handleShapeClick}
-          />
-        </Source>
-        onMouseEnter={() => {
-          if (mapRef.current) {
-            mapRef.current.getCanvas().style.cursor = drawingState.currentTool ? 'crosshair' : 'pointer';
-          }
-        }}
-        onMouseLeave={() => {
-          if (mapRef.current) {
-            mapRef.current.getCanvas().style.cursor = '';
-          }
-        }}
-      >
         {/* Flood Risk Areas Layer */}
         <Source id="flood-risk-areas" type="geojson" data={floodRiskAreasGeoJSON}>
           {/* Polygon fill layer */}
