@@ -23,6 +23,7 @@ import { HoverTooltip } from './components/HoverTooltip';
 import { AlertNotificationSystem } from './components/AlertNotificationSystem';
 import { FloodIncidentModal } from './components/FloodIncidentModal';
 import { Sidebar } from './components/Sidebar';
+import { FloodIncidentsPage } from './components/FloodIncidentsPage';
 import { useAuth } from './hooks/useAuth';
 import { WeatherPanel } from './components/WeatherPanel';
 import { LiveRiskMonitor } from './components/LiveRiskMonitor';
@@ -199,6 +200,7 @@ function App() {
   const { user, userRole } = useAuth();
   const [showAuthPage, setShowAuthPage] = useState(false);
   const [showAdminPage, setShowAdminPage] = useState(false);
+  const [showIncidentsPage, setShowIncidentsPage] = useState(false);
   const [viewState, setViewState] = useState<ViewState>({
     longitude: 125.375,
     latitude: 12.1116,
@@ -700,6 +702,11 @@ function App() {
   // Show admin page if requested
   if (showAdminPage) {
     return <AdminPage onBack={() => setShowAdminPage(false)} />;
+  }
+
+  // Show incidents page if requested
+  if (showIncidentsPage) {
+    return <FloodIncidentsPage onBack={() => setShowIncidentsPage(false)} />;
   }
 
   return (
