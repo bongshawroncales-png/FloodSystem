@@ -29,6 +29,7 @@ const SATELLITE_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     satellite: {
       type: 'raster',
@@ -57,6 +58,7 @@ const STREET_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     'osm-tiles': {
       type: 'raster',
@@ -85,6 +87,7 @@ const TERRAIN_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     terrain: {
       type: 'raster',
@@ -113,6 +116,7 @@ const TOPO_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     topo: {
       type: 'raster',
@@ -141,6 +145,7 @@ const DARK_STYLE = {
     'mapbox:autocomposite': false,
     'mapbox:type': 'template'
   },
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   sources: {
     'carto-dark': {
       type: 'raster',
