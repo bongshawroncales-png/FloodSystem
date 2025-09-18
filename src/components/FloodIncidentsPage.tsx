@@ -397,7 +397,7 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
           email: user.email!,
           displayName: user.displayName!
         },
-        changes: Object.keys(updatedIncident).join(', ')
+        changes: `Updated: ${Object.keys(updatedIncident).filter(key => key !== 'editHistory').join(', ')}`
       };
 
       await updateDoc(doc(db, 'floodIncidents', selectedIncident.id!), {
@@ -414,6 +414,9 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
       setIncidents(updatedIncidents);
       setSelectedIncident({ ...selectedIncident, ...updatedIncident, editHistory: [...editHistory, newEdit] });
       setIsEditing(false);
+      
+      // Show success message
+      alert('Incident updated successfully!');
     } catch (error) {
       console.error('Error updating incident:', error);
       alert('Failed to update incident');
@@ -940,15 +943,23 @@ const IncidentDetailsView: React.FC<{ incident: FloodIncident; showEditHistory: 
       {/* Edit History */}
       {showEditHistory && incident.editHistory && incident.editHistory.length > 0 && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">Edit History</label>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            📝 Edit History ({incident.editHistory.length} edit{incident.editHistory.length > 1 ? 's' : ''})
+          </label>
           <div className="space-y-2">
-            {incident.editHistory.map((edit, index) => (
+            {incident.editHistory.slice().reverse().map((edit, index) => (
               <div key={index} className="bg-gray-50 p-3 rounded-lg">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{edit.editedBy.displayName}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                      <User className="w-3 h-3 text-blue-600" />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">{edit.editedBy.displayName}</span>
+                  </div>
                   <span className="text-xs text-gray-500">{new Date(edit.editedAt).toLocaleString()}</span>
                 </div>
-                <p className="text-sm text-gray-600">Modified: {edit.changes}</p>
+                <p className="text-sm text-gray-600 ml-8">{edit.changes}</p>
+                <p className="text-xs text-gray-500 ml-8">by {edit.editedBy.email}</p>
               </div>
             ))}
           </div>
@@ -964,96 +975,684 @@ const IncidentEditForm: React.FC<{
   onSave: (updates: Partial<FloodIncident>) => void;
   onCancel: () => void;
 }> = ({ incident, onSave, onCancel }) => {
+  const [activeSection, setActiveSection] = useState(0);
   const [formData, setFormData] = useState({
+    // Core Details
     title: incident.title,
     description: incident.description,
+    location: incident.location,
+    barangay: incident.barangay || '',
+    municipality: incident.municipality || '',
+    province: incident.province || '',
+    onsetDateTime: incident.onsetDateTime || '',
+    endDateTime: incident.endDateTime || '',
+    cause: incident.cause || 'Heavy rainfall',
     severity: incident.severity,
+    floodDepth: incident.floodDepth || 0,
+    duration: incident.duration || '',
+    areaExtent: incident.areaExtent || '',
+    
+    // Human Impact
+    casualties: {
+      dead: incident.casualties?.dead || 0,
+      missing: incident.casualties?.missing || 0,
+      injured: incident.casualties?.injured || 0
+    },
+    evacuatedPeople: incident.evacuatedPeople || 0,
+    vulnerableGroupsAffected: incident.vulnerableGroupsAffected || [],
+    
+    // Property Impact
+    housesDamaged: incident.housesDamaged || 0,
+    housesDestroyed: incident.housesDestroyed || 0,
+    infrastructureAffected: incident.infrastructureAffected || [],
+    agricultureLosses: incident.agricultureLosses || '',
+    economicDamages: incident.economicDamages || 0,
+    
+    // Environmental Context
+    rainfallData: incident.rainfallData || '',
+    riverLevel: incident.riverLevel || '',
+    weatherEvent: incident.weatherEvent || '',
+    
+    // Response
+    respondingAgencies: incident.respondingAgencies || [],
+    evacuationCenters: incident.evacuationCenters || '',
+    reliefProvided: incident.reliefProvided || '',
+    challengesEncountered: incident.challengesEncountered || '',
+    
+    // Status
     status: incident.status,
     affectedPopulation: incident.affectedPopulation || 0
   });
+
+  const sections = [
+    { title: 'Core Details', icon: AlertTriangle },
+    { title: 'Human Impact', icon: Users },
+    { title: 'Property & Infrastructure', icon: Home },
+    { title: 'Environmental Context', icon: Cloud },
+    { title: 'Response & Actions', icon: Shield }
+  ];
+
+  const FLOOD_CAUSES = [
+    'Heavy rainfall',
+    'Dam release',
+    'Storm surge',
+    'Typhoon',
+    'Super Typhoon',
+    'Monsoon',
+    'River overflow',
+    'Flash flood',
+    'Coastal flooding',
+    'Other'
+  ];
+
+  const VULNERABLE_GROUPS = [
+    'Children (0-12 years)',
+    'Elderly (60+ years)',
+    'Persons with Disabilities (PWDs)',
+    'Pregnant women',
+    'Infants and toddlers',
+    'Chronically ill persons',
+    'Indigenous peoples'
+  ];
+
+  const INFRASTRUCTURE_TYPES = [
+    'Roads',
+    'Bridges',
+    'Schools',
+    'Hospitals',
+    'Health centers',
+    'Power supply',
+    'Water supply',
+    'Communication towers',
+    'Government buildings',
+    'Markets',
+    'Churches',
+    'Ports/Airports'
+  ];
+
+  const RESPONDING_AGENCIES = [
+    'Local Government Unit (LGU)',
+    'NDRRMC',
+    'Philippine Red Cross',
+    'DSWD',
+    'DOH',
+    'PNP',
+    'AFP',
+    'BFP',
+    'Coast Guard',
+    'DPWH',
+    'NGOs',
+    'Volunteers'
+  ];
+
+  const handleArrayFieldChange = (field: string, value: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: checked
+        ? [...(prev[field as keyof typeof prev] as string[]), value]
+        : (prev[field as keyof typeof prev] as string[]).filter(item => item !== value)
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(formData);
   };
 
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'Critical': return 'text-red-600 bg-red-50 border-red-200';
+      case 'High': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'Medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'Low': return 'text-green-600 bg-green-50 border-green-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
-        <input
-          type="text"
-          value={formData.title}
-          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-        <textarea
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-          rows={4}
-          required
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Severity</label>
-          <select
-            value={formData.severity}
-            onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value as any }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
-            <option value="Critical">Critical</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-          <select
-            value={formData.status}
-            onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="Pending">Pending</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Resolved">Resolved</option>
-          </select>
+      {/* Section Navigation */}
+      <div className="border-b border-gray-200 bg-gray-50 -mx-6 px-6 py-3">
+        <div className="flex overflow-x-auto">
+          {sections.map((section, index) => {
+            const Icon = section.icon;
+            return (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setActiveSection(index)}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeSection === index
+                    ? 'border-blue-500 text-blue-600 bg-white'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {section.title}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Affected Population</label>
-        <input
-          type="number"
-          value={formData.affectedPopulation}
-          onChange={(e) => setFormData(prev => ({ ...prev, affectedPopulation: Number(e.target.value) }))}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          min="0"
-        />
+      {/* Form Content */}
+      <div className="max-h-96 overflow-y-auto modal-scrollbar">
+        {/* Section 0: Core Details */}
+        {activeSection === 0 && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Incident Title *
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Barangay
+                </label>
+                <input
+                  type="text"
+                  value={formData.barangay}
+                  onChange={(e) => setFormData(prev => ({ ...prev, barangay: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Municipality
+                </label>
+                <input
+                  type="text"
+                  value={formData.municipality}
+                  onChange={(e) => setFormData(prev => ({ ...prev, municipality: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Province
+                </label>
+                <input
+                  type="text"
+                  value={formData.province}
+                  onChange={(e) => setFormData(prev => ({ ...prev, province: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Onset Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.onsetDateTime}
+                  onChange={(e) => setFormData(prev => ({ ...prev, onsetDateTime: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  End Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.endDateTime}
+                  onChange={(e) => setFormData(prev => ({ ...prev, endDateTime: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cause/Trigger *
+                </label>
+                <select
+                  value={formData.cause}
+                  onChange={(e) => setFormData(prev => ({ ...prev, cause: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  {FLOOD_CAUSES.map(cause => (
+                    <option key={cause} value={cause}>{cause}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Severity Level *
+                </label>
+                <select
+                  value={formData.severity}
+                  onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value as any }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="Low">Low - Minor flooding</option>
+                  <option value="Medium">Medium - Moderate flooding</option>
+                  <option value="High">High - Significant flooding</option>
+                  <option value="Critical">Critical - Severe flooding</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Flood Depth (meters)
+                </label>
+                <input
+                  type="number"
+                  value={formData.floodDepth}
+                  onChange={(e) => setFormData(prev => ({ ...prev, floodDepth: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  step="0.1"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Duration
+                </label>
+                <input
+                  type="text"
+                  value={formData.duration}
+                  onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
+                  placeholder="e.g., 6 hours, 2 days"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Area Extent
+                </label>
+                <input
+                  type="text"
+                  value={formData.areaExtent}
+                  onChange={(e) => setFormData(prev => ({ ...prev, areaExtent: e.target.value }))}
+                  placeholder="e.g., 5 hectares, 2 barangays"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Incident Description *
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                rows={4}
+                placeholder="Detailed description of the flood incident..."
+                required
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Section 1: Human Impact */}
+        {activeSection === 1 && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Total Population Affected
+                </label>
+                <input
+                  type="number"
+                  value={formData.affectedPopulation}
+                  onChange={(e) => setFormData(prev => ({ ...prev, affectedPopulation: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Evacuated/Displaced People
+                </label>
+                <input
+                  type="number"
+                  value={formData.evacuatedPeople}
+                  onChange={(e) => setFormData(prev => ({ ...prev, evacuatedPeople: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Casualties
+              </label>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Dead</label>
+                  <input
+                    type="number"
+                    value={formData.casualties.dead}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      casualties: { ...prev.casualties, dead: Number(e.target.value) }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Missing</label>
+                  <input
+                    type="number"
+                    value={formData.casualties.missing}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      casualties: { ...prev.casualties, missing: Number(e.target.value) }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Injured</label>
+                  <input
+                    type="number"
+                    value={formData.casualties.injured}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      casualties: { ...prev.casualties, injured: Number(e.target.value) }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    min="0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Vulnerable Groups Affected
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {VULNERABLE_GROUPS.map(group => (
+                  <label key={group} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.vulnerableGroupsAffected.includes(group)}
+                      onChange={(e) => handleArrayFieldChange('vulnerableGroupsAffected', group, e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{group}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Section 2: Property & Infrastructure */}
+        {activeSection === 2 && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Houses Damaged
+                </label>
+                <input
+                  type="number"
+                  value={formData.housesDamaged}
+                  onChange={(e) => setFormData(prev => ({ ...prev, housesDamaged: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Houses Destroyed
+                </label>
+                <input
+                  type="number"
+                  value={formData.housesDestroyed}
+                  onChange={(e) => setFormData(prev => ({ ...prev, housesDestroyed: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Infrastructure Affected
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {INFRASTRUCTURE_TYPES.map(infra => (
+                  <label key={infra} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.infrastructureAffected.includes(infra)}
+                      onChange={(e) => handleArrayFieldChange('infrastructureAffected', infra, e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{infra}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Agriculture & Livelihood Losses
+              </label>
+              <textarea
+                value={formData.agricultureLosses}
+                onChange={(e) => setFormData(prev => ({ ...prev, agricultureLosses: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                rows={3}
+                placeholder="Describe crops, livestock, fisheries, and other livelihood losses..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Estimated Economic Damages (₱)
+              </label>
+              <input
+                type="number"
+                value={formData.economicDamages}
+                onChange={(e) => setFormData(prev => ({ ...prev, economicDamages: Number(e.target.value) }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                min="0"
+                step="1000"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Section 3: Environmental Context */}
+        {activeSection === 3 && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rainfall Data
+              </label>
+              <input
+                type="text"
+                value={formData.rainfallData}
+                onChange={(e) => setFormData(prev => ({ ...prev, rainfallData: e.target.value }))}
+                placeholder="e.g., 150mm in 24h, 300mm cumulative"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                River/Stream Level at Peak
+              </label>
+              <input
+                type="text"
+                value={formData.riverLevel}
+                onChange={(e) => setFormData(prev => ({ ...prev, riverLevel: e.target.value }))}
+                placeholder="e.g., 5.2m above normal, critical level"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Weather Event Context
+              </label>
+              <input
+                type="text"
+                value={formData.weatherEvent}
+                onChange={(e) => setFormData(prev => ({ ...prev, weatherEvent: e.target.value }))}
+                placeholder="e.g., Typhoon 'Egay', ITCZ, Low Pressure Area"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Section 4: Response & Actions */}
+        {activeSection === 4 && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Responding Agencies/Organizations
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {RESPONDING_AGENCIES.map(agency => (
+                  <label key={agency} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.respondingAgencies.includes(agency)}
+                      onChange={(e) => handleArrayFieldChange('respondingAgencies', agency, e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">{agency}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Evacuation Centers Used
+              </label>
+              <textarea
+                value={formData.evacuationCenters}
+                onChange={(e) => setFormData(prev => ({ ...prev, evacuationCenters: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                rows={3}
+                placeholder="List evacuation centers, schools, or facilities used..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Relief Provided
+              </label>
+              <textarea
+                value={formData.reliefProvided}
+                onChange={(e) => setFormData(prev => ({ ...prev, reliefProvided: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                rows={3}
+                placeholder="Food packs, medical aid, rescue operations, etc..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Challenges Encountered
+              </label>
+              <textarea
+                value={formData.challengesEncountered}
+                onChange={(e) => setFormData(prev => ({ ...prev, challengesEncountered: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                rows={3}
+                placeholder="Road blockages, communication failures, resource limitations, etc..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as any }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Resolved">Resolved</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="flex gap-3 pt-4 border-t border-gray-200">
+      {/* Navigation and Submit */}
+      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+        <button
+          type="button"
+          onClick={() => setActiveSection(Math.max(0, activeSection - 1))}
+          disabled={activeSection === 0}
+          className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          Previous
+        </button>
+        
+        <div className={`px-3 py-1 rounded-lg border ${getSeverityColor(formData.severity)}`}>
+          <span className="text-sm font-medium">Severity: {formData.severity}</span>
+        </div>
+        
+        {activeSection < sections.length - 1 ? (
+          <button
+            type="button"
+            onClick={() => setActiveSection(Math.min(sections.length - 1, activeSection + 1))}
+            className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+          >
+            Next
+          </button>
+        ) : (
+          <button
+            type="submit"
+            className="px-6 py-2 text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+          >
+            Save Changes
+          </button>
+        )}
+      </div>
+
+      <div className="flex gap-3">
         <button
           type="button"
           onClick={onCancel}
           className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
         >
           Cancel
-        </button>
-        <button
-          type="submit"
-          className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-        >
-          Save Changes
         </button>
       </div>
     </form>
