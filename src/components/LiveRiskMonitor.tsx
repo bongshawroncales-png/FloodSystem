@@ -10,6 +10,38 @@ interface LiveRiskMonitorProps {
   isDarkTheme: boolean;
 }
 
+// Mock weather simulation data
+const MOCK_WEATHER_SCENARIOS = [
+  {
+    name: 'Heavy Rain Storm',
+    rainfall: 65,
+    windSpeed: 45,
+    temperature: 26,
+    forecastRainfall: 120
+  },
+  {
+    name: 'Severe Typhoon',
+    rainfall: 85,
+    windSpeed: 85,
+    temperature: 24,
+    forecastRainfall: 200
+  },
+  {
+    name: 'Moderate Rain',
+    rainfall: 25,
+    windSpeed: 20,
+    temperature: 28,
+    forecastRainfall: 45
+  },
+  {
+    name: 'Clear Weather',
+    rainfall: 0,
+    windSpeed: 8,
+    temperature: 30,
+    forecastRainfall: 5
+  }
+];
+
 // Simple weather data fetcher with better error handling
 const fetchSimpleWeatherData = async (lat: number, lng: number) => {
   // Check if API key is available
@@ -47,6 +79,8 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
   isDarkTheme 
 }) => {
   const [isMonitoring, setIsMonitoring] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [currentScenario, setCurrentScenario] = useState(0);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [updateCount, setUpdateCount] = useState(0);
   const [hasApiKey, setHasApiKey] = useState(false);
@@ -63,13 +97,13 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
 
   // Update risk levels for areas based on current conditions
   const updateRiskLevels = useCallback(async () => {
-    if (!hasApiKey) {
+    if (!hasApiKey && !isDemoMode) {
       console.log('Skipping risk update - no API key');
       return;
     }
 
     try {
-      console.log('Starting risk level update...');
+      console.log(`Starting risk level update... (${isDemoMode ? 'DEMO MODE' : 'LIVE MODE'})`);
       
       // Get all flood risk areas
       const querySnapshot = await getDocs(collection(db, 'floodRiskAreas'));
@@ -124,8 +158,22 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
               return;
             }
 
-            // Fetch current weather
-            const weatherData = await fetchSimpleWeatherData(coordinates[1], coordinates[0]);
+            // Fetch current weather (real or mock)
+            let weatherData;
+            if (isDemoMode) {
+              // Use mock weather data
+              const scenario = MOCK_WEATHER_SCENARIOS[currentScenario];
+              weatherData = {
+                rainfall: scenario.rainfall,
+                windSpeed: scenario.windSpeed,
+                temperature: scenario.temperature,
+                forecastRainfall: scenario.forecastRainfall
+              };
+              console.log(`Using mock weather scenario: ${scenario.name}`, weatherData);
+            } else {
+              // Use real weather data
+              weatherData = await fetchSimpleWeatherData(coordinates[1], coordinates[0]);
+            }
             
             if (weatherData) {
               // Update area's weather data
@@ -164,7 +212,7 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
         }));
 
         // Small delay between batches
-        if (i + batchSize < areas.length) {
+        if (i + batchSize < areas.length && !isDemoMode) {
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       }
@@ -181,38 +229,53 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
     } catch (error) {
       console.error('Error updating risk levels:', error);
     }
-  }, [hasApiKey, onRiskAreasUpdate]);
+  }, [hasApiKey, isDemoMode, currentScenario, onRiskAreasUpdate]);
 
   // Start/stop monitoring
   const toggleMonitoring = useCallback(() => {
-    if (!hasApiKey) {
+    if (!hasApiKey && !isDemoMode) {
       alert('Cannot start monitoring: OpenWeatherMap API key not configured. Please add VITE_OPENWEATHER_API_KEY to your .env file.');
       return;
     }
     
     setIsMonitoring(prev => !prev);
-  }, [hasApiKey]);
+  }, [hasApiKey, isDemoMode]);
+
+  // Toggle demo mode
+  const toggleDemoMode = useCallback(() => {
+    if (isMonitoring) {
+      setIsMonitoring(false);
+    }
+    setIsDemoMode(prev => !prev);
+    setCurrentScenario(0);
+  }, [isMonitoring]);
+
+  // Cycle through demo scenarios
+  const nextScenario = useCallback(() => {
+    setCurrentScenario(prev => (prev + 1) % MOCK_WEATHER_SCENARIOS.length);
+  }, []);
 
   // Set up monitoring interval
   useEffect(() => {
-    if (!isMonitoring || !hasApiKey) return;
+    if (!isMonitoring || (!hasApiKey && !isDemoMode)) return;
 
-    console.log('Starting live risk monitoring...');
+    console.log(`Starting ${isDemoMode ? 'DEMO' : 'LIVE'} risk monitoring...`);
     
     // Initial update
     updateRiskLevels();
     
-    // Set up interval (every 5 minutes for testing, can be adjusted)
+    // Set up interval (shorter for demo mode)
+    const intervalTime = isDemoMode ? 10 * 1000 : 5 * 60 * 1000; // 10 seconds for demo, 5 minutes for live
     const interval = setInterval(() => {
-      console.log('Running scheduled risk update...');
+      console.log(`Running scheduled ${isDemoMode ? 'DEMO' : 'LIVE'} risk update...`);
       updateRiskLevels();
-    }, 5 * 60 * 1000); // 5 minutes
+    }, intervalTime);
 
     return () => {
-      console.log('Stopping live risk monitoring...');
+      console.log(`Stopping ${isDemoMode ? 'DEMO' : 'LIVE'} risk monitoring...`);
       clearInterval(interval);
     };
-  }, [isMonitoring, hasApiKey, updateRiskLevels]);
+  }, [isMonitoring, hasApiKey, isDemoMode, updateRiskLevels]);
 
   const panelClasses = isDarkTheme 
     ? 'bg-gray-900/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-700/50'
@@ -223,7 +286,7 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
     : 'bg-white/10 hover:bg-white/20';
 
   return (
-    <div className={`${panelClasses} w-72 p-4`}>
+    <div className={`${panelClasses} w-80 p-4`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className={`p-2 rounded-lg ${isDarkTheme ? 'bg-green-600/20' : 'bg-green-500/20'}`}>
@@ -234,13 +297,14 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
         
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${
-            !hasApiKey ? 'bg-red-400' : 
+            !hasApiKey && !isDemoMode ? 'bg-red-400' : 
+            isDemoMode ? 'bg-yellow-400 animate-pulse' :
             isMonitoring ? 'bg-green-400 animate-pulse' : 'bg-gray-400'
           }`} />
           <button
             onClick={toggleMonitoring}
             className={`p-1.5 ${buttonClasses} rounded-lg transition-all duration-200 hover:scale-105`}
-            disabled={!hasApiKey}
+            disabled={!hasApiKey && !isDemoMode}
           >
             {isMonitoring ? (
               <Pause className={`w-3 h-3 ${textClasses}`} />
@@ -253,13 +317,22 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
 
       <div className="space-y-2 text-xs">
         <div className={`${textClasses} opacity-75`}>
-          Status: {!hasApiKey ? 'API Key Missing' : isMonitoring ? 'Active' : 'Inactive'}
+          Status: {!hasApiKey && !isDemoMode ? 'API Key Missing' : 
+                   isDemoMode ? `Demo Mode (${MOCK_WEATHER_SCENARIOS[currentScenario].name})` :
+                   isMonitoring ? 'Live Active' : 'Inactive'}
         </div>
         
-        {!hasApiKey && (
+        {!hasApiKey && !isDemoMode && (
           <div className="text-red-400 text-xs">
             <AlertTriangle className="w-3 h-3 inline mr-1" />
             Configure VITE_OPENWEATHER_API_KEY in .env
+          </div>
+        )}
+        
+        {isDemoMode && (
+          <div className="text-yellow-400 text-xs">
+            <AlertTriangle className="w-3 h-3 inline mr-1" />
+            Using simulated weather data
           </div>
         )}
         
@@ -276,9 +349,37 @@ export const LiveRiskMonitor: React.FC<LiveRiskMonitorProps> = ({
           </div>
         )}
         
-        {isMonitoring && hasApiKey && (
+        {isMonitoring && (hasApiKey || isDemoMode) && (
           <div className={`${textClasses} opacity-75`}>
-            Next check in ~5 minutes
+            Next check in ~{isDemoMode ? '10 seconds' : '5 minutes'}
+          </div>
+        )}
+      </div>
+
+      {/* Demo Controls */}
+      <div className={`mt-3 pt-3 border-t ${isDarkTheme ? 'border-gray-600/50' : 'border-white/20'} space-y-2`}>
+        <button
+          onClick={toggleDemoMode}
+          className={`w-full px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+            isDemoMode 
+              ? 'bg-yellow-500/60 hover:bg-yellow-500/80 text-white' 
+              : `${buttonClasses} ${textClasses} hover:bg-yellow-500/30`
+          }`}
+        >
+          {isDemoMode ? 'Exit Demo Mode' : 'Start Demo Mode'}
+        </button>
+        
+        {isDemoMode && (
+          <div className="space-y-2">
+            <button
+              onClick={nextScenario}
+              className={`w-full px-3 py-1.5 ${buttonClasses} rounded-lg ${textClasses} text-xs transition-all duration-200 hover:scale-105`}
+            >
+              Next Scenario ({currentScenario + 1}/{MOCK_WEATHER_SCENARIOS.length})
+            </button>
+            <div className={`${textClasses} text-xs opacity-75 text-center`}>
+              Current: {MOCK_WEATHER_SCENARIOS[currentScenario].name}
+            </div>
           </div>
         )}
       </div>
