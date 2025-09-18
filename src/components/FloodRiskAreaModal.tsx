@@ -114,6 +114,20 @@ export const FloodRiskAreaModal: React.FC<FloodRiskAreaModalProps> = ({
     if (isOpen && geometry) {
       console.log('Modal opened with geometry:', geometry);
       console.log('Geometry coordinates:', geometry.coordinates);
+      
+      // Initialize form data with the provided geometry
+      setFormData(prev => ({
+        ...prev,
+        geometry: {
+          type: geometry.type,
+          coordinates: geometry.coordinates
+        },
+        coordinates: geometry.coordinates,
+        basicInfo: {
+          ...prev.basicInfo,
+          coordinates: geometry.coordinates
+        }
+      }));
     }
   }, [isOpen, geometry]);
 
