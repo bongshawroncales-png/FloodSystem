@@ -213,7 +213,7 @@ function App() {
   // Center coordinates for Oras, Eastern Samar
   const CENTER_LAT = 12.1116;
   const CENTER_LNG = 125.3575;
-  const MAX_RADIUS_KM = 3000;
+  const MAX_RADIUS_KM = 3; // 3 kilometers radius limit
 
   // Function to calculate distance between two coordinates in kilometers
   const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -236,25 +236,10 @@ function App() {
       return { lat, lng };
     }
     
-    // Calculate the bearing from center to the point
-    const dLng = (lng - CENTER_LNG) * Math.PI / 180;
-    const lat1Rad = CENTER_LAT * Math.PI / 180;
-    const lat2Rad = lat * Math.PI / 180;
-    
-    const y = Math.sin(dLng) * Math.cos(lat2Rad);
-    const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
-    const bearing = Math.atan2(y, x);
-    
-    // Calculate new coordinates at the maximum radius
-    const R = 6371; // Earth's radius in km
-    const newLat = Math.asin(Math.sin(lat1Rad) * Math.cos(MAX_RADIUS_KM / R) + 
-                            Math.cos(lat1Rad) * Math.sin(MAX_RADIUS_KM / R) * Math.cos(bearing));
-    const newLng = CENTER_LNG * Math.PI / 180 + Math.atan2(Math.sin(bearing) * Math.sin(MAX_RADIUS_KM / R) * Math.cos(lat1Rad),
-                                                          Math.cos(MAX_RADIUS_KM / R) - Math.sin(lat1Rad) * Math.sin(newLat));
-    
+    // If outside radius, bounce back to center
     return {
-      lat: newLat * 180 / Math.PI,
-      lng: newLng * 180 / Math.PI
+      lat: CENTER_LAT,
+      lng: CENTER_LNG
     };
   };
   // Effect to open risk area modal when geometry is ready
@@ -267,11 +252,26 @@ function App() {
   // Handle view state changes with radius constraint
   const handleViewStateChange = useCallback((evt: any) => {
     const constrainedCoords = constrainToRadius(evt.viewState.latitude, evt.viewState.longitude);
-    setViewState({
-      ...evt.viewState,
-      latitude: constrainedCoords.lat,
-      longitude: constrainedCoords.lng
-    });
+    
+    // If coordinates were constrained (bounced back), animate to center
+    if (constrainedCoords.lat !== evt.viewState.latitude || constrainedCoords.lng !== evt.viewState.longitude) {
+      // Bounce back to center with animation
+      setViewState(prev => ({
+        ...prev,
+        latitude: CENTER_LAT,
+        longitude: CENTER_LNG,
+        zoom: 14, // Zoom in a bit when bouncing back
+        transitionDuration: 1000,
+        transitionInterpolator: undefined
+      }));
+    } else {
+      // Normal movement within radius
+      setViewState({
+        ...evt.viewState,
+        latitude: constrainedCoords.lat,
+        longitude: constrainedCoords.lng
+      });
+    }
   }, []);
   const handleZoomIn = useCallback(() => {
     setViewState(prev => ({ ...prev, zoom: Math.min(prev.zoom + 1, 20) }));
@@ -549,8 +549,8 @@ function App() {
         keyboard={true}
         doubleClickZoom={true}
         maxBounds={[
-          [CENTER_LNG - 27, CENTER_LAT - 27], // Southwest corner (approximately 3000km)
-          [CENTER_LNG + 27, CENTER_LAT + 27]  // Northeast corner (approximately 3000km)
+          [CENTER_LNG - 0.027, CENTER_LAT - 0.027], // Southwest corner (approximately 3km)
+          [CENTER_LNG + 0.027, CENTER_LAT + 0.027]  // Northeast corner (approximately 3km)
         ]}
         onMouseEnter={() => {
           if (mapRef.current) {
