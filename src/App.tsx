@@ -1016,6 +1016,7 @@ function App() {
               <span className={isDarkTheme ? 'text-gray-400' : 'text-gray-300'}>Layer:</span>
               <span>{BASEMAPS[currentLayer].name}</span>
             </div>
+          </div>
 
           {/* Risk Level Legend */}
           <div className={`pt-3 border-t ${isDarkTheme ? 'border-gray-600/50' : 'border-white/20'}`}>
@@ -1040,7 +1041,7 @@ function App() {
               </p>
             </div>
           </div>
-        </div>
+            </div>
           )}
         </div>
       </div>
