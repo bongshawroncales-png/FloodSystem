@@ -19,5 +19,5 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
 // OpenWeatherMap API configuration
-export const OPENWEATHER_API_KEY = '892b7ee2e8f0e34c8a6d580ed06dc2a8';
+export const OPENWEATHER_API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
 export const OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
