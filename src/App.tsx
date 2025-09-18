@@ -509,6 +509,7 @@ function App() {
           <Layer
             id="flood-risk-areas-circle"
             type="circle"
+            filter={['==', ['geometry-type'], 'Point']}
             paint={{
               'circle-color': ['get', 'color'],
               'circle-radius': 20,
