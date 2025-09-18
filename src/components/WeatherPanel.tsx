@@ -215,7 +215,7 @@ export const WeatherPanel: React.FC<WeatherPanelProps> = ({ coordinates, isDarkT
   };
 
   return (
-    <div className={`${panelClasses} w-80 transition-all duration-300 ${isCollapsed ? 'h-auto' : 'max-h-96 overflow-y-auto'}`}>
+    <div className={`${panelClasses} w-80 transition-all duration-300 ${isCollapsed ? 'h-auto' : 'max-h-96 overflow-y-auto custom-scrollbar'}`}>
       {/* Header */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}

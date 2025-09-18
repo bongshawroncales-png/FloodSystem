@@ -781,19 +781,6 @@ function App() {
         </div>
       </div>
 
-      {showWeather && (
-        <div className="absolute top-20 right-4 z-10">
-          <div className={`${panelClasses} p-3`}>
-            <div className={`${textClasses} text-sm space-y-2`}>
-              <div className="flex items-center gap-2">
-                <Cloud className="w-4 h-4 text-blue-400" />
-                <span>Weather Layer Active</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Drawing Instructions */}
       {drawingState.currentTool && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
