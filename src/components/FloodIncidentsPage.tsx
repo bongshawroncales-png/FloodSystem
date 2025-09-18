@@ -397,7 +397,7 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
           email: user.email!,
           displayName: user.displayName!
         },
-        changes: Object.keys(updatedIncident).join(', ')
+        changes: `Updated: ${Object.keys(updatedIncident).filter(key => key !== 'editHistory').join(', ')}`
       };
 
       await updateDoc(doc(db, 'floodIncidents', selectedIncident.id!), {
@@ -414,6 +414,9 @@ export const FloodIncidentsPage: React.FC<FloodIncidentsPageProps> = ({ onBack }
       setIncidents(updatedIncidents);
       setSelectedIncident({ ...selectedIncident, ...updatedIncident, editHistory: [...editHistory, newEdit] });
       setIsEditing(false);
+      
+      // Show success message
+      alert('Incident updated successfully!');
     } catch (error) {
       console.error('Error updating incident:', error);
       alert('Failed to update incident');
