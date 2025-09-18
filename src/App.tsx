@@ -486,8 +486,28 @@ function App() {
         touchRotate={true}
         keyboard={true}
         doubleClickZoom={true}
-        interactiveLayerIds={['flood-risk-areas-fill', 'flood-risk-areas-outline', 'flood-risk-areas-circle', 'flood-risk-areas-labels']}
-        onMouseMove={handleShapeClick}
+        onMouseEnter={() => {
+          if (mapRef.current) {
+            mapRef.current.getCanvas().style.cursor = drawingState.currentTool ? 'crosshair' : 'pointer';
+          }
+        }}
+        onMouseLeave={() => {
+          if (mapRef.current) {
+            mapRef.current.getCanvas().style.cursor = '';
+          }
+        }}
+      >
+        {/* Add a click handler layer for shape interactions */}
+        <Source id="click-handler" type="geojson" data={floodRiskAreasGeoJSON}>
+          <Layer
+            id="click-handler-layer"
+            type="fill"
+            paint={{
+              'fill-opacity': 0
+            }}
+            onClick={handleShapeClick}
+          />
+        </Source>
         onMouseEnter={() => {
           if (mapRef.current) {
             mapRef.current.getCanvas().style.cursor = drawingState.currentTool ? 'crosshair' : 'pointer';
