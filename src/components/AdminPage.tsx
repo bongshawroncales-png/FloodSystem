@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, Shield, Settings, Eye, Edit, Trash2, CheckCircle, XCircle, AlertTriangle, MapPin, Calendar, User, Mail, Phone, MapIcon, X } from 'lucide-react';
+import { ArrowLeft, Users, Shield, Settings, Eye, Edit, Trash2, CheckCircle, XCircle, AlertTriangle, MapPin, Calendar, User, Mail, Phone, MapIcon, X, EyeOff, Lock } from 'lucide-react';
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc } from 'firebase/firestore';
+import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { db } from '../firebase';
 import { UserProfile, FloodIncident, UserRole } from '../types';
 import { useAuth } from '../hooks/useAuth';
@@ -51,6 +52,20 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
     userId: '',
     userName: ''
   });
+  const [passwordConfirmation, setPasswordConfirmation] = useState<{
+    isOpen: boolean;
+    userId: string;
+    userName: string;
+    password: string;
+    loading: boolean;
+  }>({
+    isOpen: false,
+    userId: '',
+    userName: '',
+    password: '',
+    loading: false
+  });
+  const [showPassword, setShowPassword] = useState(false);
 
   // Load users and incidents
   useEffect(() => {
@@ -181,28 +196,60 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    setDeleteUserConfirmation({
+    setPasswordConfirmation({
       isOpen: true,
       userId,
-      userName
+      userName,
+      password: '',
+      loading: false
     });
   };
 
-  const confirmDeleteUser = async () => {
+  const confirmDeleteUserWithPassword = async () => {
+    if (!passwordConfirmation.password.trim()) {
+      setError('Password is required to confirm deletion');
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+
+    setPasswordConfirmation(prev => ({ ...prev, loading: true }));
+    
     try {
-      await deleteDoc(doc(db, 'users', deleteUserConfirmation.userId));
-      setUsers(prev => prev.filter(user => user.uid !== deleteUserConfirmation.userId));
+      // Re-authenticate admin user before allowing deletion
+      const credential = EmailAuthProvider.credential(user!.email!, passwordConfirmation.password);
+      await reauthenticateWithCredential(user!, credential);
+      
+      // If re-authentication succeeds, proceed with deletion
+      await deleteDoc(doc(db, 'users', passwordConfirmation.userId));
+      setUsers(prev => prev.filter(user => user.uid !== passwordConfirmation.userId));
       setSuccess('User deleted successfully');
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Error deleting user:', error);
-      setError('Failed to delete user. Please try again.');
+      
+      let errorMessage = 'Failed to delete user. Please try again.';
+      if (error instanceof Error) {
+        if (error.message.includes('auth/wrong-password')) {
+          errorMessage = 'Incorrect password. Please try again.';
+        } else if (error.message.includes('auth/too-many-requests')) {
+          errorMessage = 'Too many failed attempts. Please try again later.';
+        } else if (error.message.includes('auth/requires-recent-login')) {
+          errorMessage = 'Please sign out and sign in again before deleting users.';
+        }
+      }
+      
+      setError(errorMessage);
       setTimeout(() => setError(null), 5000);
+    } finally {
+      setPasswordConfirmation(prev => ({ ...prev, loading: false }));
     }
-    setDeleteUserConfirmation({
+    
+    setPasswordConfirmation({
       isOpen: false,
       userId: '',
-      userName: ''
+      userName: '',
+      password: '',
+      loading: false
     });
   };
 
