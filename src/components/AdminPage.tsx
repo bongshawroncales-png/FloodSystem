@@ -746,16 +746,94 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBack }) => {
       />
 
       {/* Delete User Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={deleteUserConfirmation.isOpen}
-        onClose={() => setDeleteUserConfirmation({ isOpen: false, userId: '', userName: '' })}
-        onConfirm={confirmDeleteUser}
-        title="Delete User Account"
-        message={`Are you sure you want to delete the user account "${deleteUserConfirmation.userName}"? This action cannot be undone and will permanently remove all user data and access.`}
-        type="delete"
-        confirmText="Delete User"
-        cancelText="Keep User"
-      />
+      {passwordConfirmation.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-red-100">
+                  <Trash2 className="w-5 h-5 text-red-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-800">Confirm User Deletion</h2>
+              </div>
+              <button
+                onClick={() => setPasswordConfirmation({ isOpen: false, userId: '', userName: '', password: '', loading: false })}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                disabled={passwordConfirmation.loading}
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600" />
+                  <span className="font-medium text-red-800">Warning: Permanent Action</span>
+                </div>
+                <p className="text-red-700 text-sm">
+                  You are about to permanently delete the user account "{passwordConfirmation.userName}". 
+                  This action cannot be undone and will remove all user data and access.
+                </p>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Enter your admin password to confirm deletion
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={passwordConfirmation.password}
+                    onChange={(e) => setPasswordConfirmation(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="Enter your password"
+                    disabled={passwordConfirmation.loading}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !passwordConfirmation.loading) {
+                        confirmDeleteUserWithPassword();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    disabled={passwordConfirmation.loading}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setPasswordConfirmation({ isOpen: false, userId: '', userName: '', password: '', loading: false })}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
+                  disabled={passwordConfirmation.loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteUserWithPassword}
+                  disabled={passwordConfirmation.loading || !passwordConfirmation.password.trim()}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {passwordConfirmation.loading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      Deleting...
+                    </div>
+                  ) : (
+                    'Delete User Account'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
