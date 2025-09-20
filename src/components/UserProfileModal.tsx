@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, MapPin, Calendar, Briefcase, Eye, EyeOff, Lock, Save } from 'lucide-react';
 import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { ErrorNotification } from './ErrorNotification';
 
@@ -20,6 +20,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [loadingUserData, setLoadingUserData] = useState(true);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -33,6 +35,40 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     dateOfBirth: '',
     occupation: ''
   });
+
+  // Load user data from Firebase when modal opens
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!user) return;
+      
+      setLoadingUserData(true);
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setProfileData({
+            firstName: userData.firstName || user.displayName?.split(' ')[0] || '',
+            lastName: userData.lastName || user.displayName?.split(' ').slice(1).join(' ') || '',
+            email: user.email || '',
+            phone: userData.phone || '',
+            address: userData.address || '',
+            dateOfBirth: userData.dateOfBirth || '',
+            occupation: userData.occupation || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        setError('Failed to load user data. Please try again.');
+        setTimeout(() => setError(null), 5000);
+      } finally {
+        setLoadingUserData(false);
+      }
+    };
+
+    if (isOpen) {
+      loadUserData();
+    }
+  }, [isOpen, user]);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -76,6 +112,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isEditingProfile) return;
     setLoading(true);
     setError(null);
 
@@ -98,6 +135,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(null), 3000);
+      setIsEditingProfile(false);
     } catch (error: any) {
       console.error('Error updating profile:', error);
       setError('Failed to update profile. Please try again.');
@@ -166,12 +204,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <h2 className="text-xl font-semibold text-gray-800">My Profile</h2>
             <p className="text-sm text-gray-600">Manage your account information</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            {activeTab === 'profile' && !isEditingProfile && (
+              <button
+                onClick={() => setIsEditingProfile(true)}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                Edit Profile
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -210,6 +258,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             onClearSuccess={() => setSuccess(null)}
           />
 
+          {loadingUserData && activeTab === 'profile' ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+              <p className="text-gray-600">Loading your profile...</p>
+            </div>
+          ) : (
+            <>
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <form onSubmit={handleProfileUpdate} className="space-y-4">
@@ -222,8 +277,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={profileData.firstName}
                     onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditingProfile ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                    placeholder="Enter your first name"
+                    disabled={!isEditingProfile}
                     required
                   />
                 </div>
@@ -235,8 +291,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={profileData.lastName}
                     onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditingProfile ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                    placeholder="Enter your last name"
+                    disabled={!isEditingProfile}
                     required
                   />
                 </div>
@@ -269,8 +326,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="tel"
                     value={profileData.phone}
                     onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditingProfile ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                    placeholder="Enter your phone number"
+                    disabled={!isEditingProfile}
                   />
                 </div>
               </div>
@@ -285,8 +343,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={profileData.address}
                     onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditingProfile ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                    placeholder="Enter your address"
+                    disabled={!isEditingProfile}
                   />
                 </div>
               </div>
@@ -301,8 +360,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="date"
                     value={profileData.dateOfBirth}
                     onChange={(e) => setProfileData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditingProfile ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                    placeholder="Select your date of birth"
+                    disabled={!isEditingProfile}
                   />
                 </div>
               </div>
@@ -317,29 +377,41 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={profileData.occupation}
                     onChange={(e) => setProfileData(prev => ({ ...prev, occupation: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditingProfile ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                    placeholder="Enter your occupation"
+                    disabled={!isEditingProfile}
                   />
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    Updating...
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <Save className="w-4 h-4" />
-                    Update Profile
-                  </div>
-                )}
-              </button>
+              {isEditingProfile && (
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProfile(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        Updating...
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <Save className="w-4 h-4" />
+                        Update Profile
+                      </div>
+                    )}
+                  </button>
+                </div>
+              )}
             </form>
           )}
 
@@ -453,6 +525,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 )}
               </button>
             </form>
+          )}
+            </>
           )}
         </div>
       </div>
