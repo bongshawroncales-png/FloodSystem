@@ -722,10 +722,34 @@ interface EditUserModalProps {
 
 const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) => {
   const [formData, setFormData] = useState<UserProfile>(user);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load user data from Firebase when modal opens
+  useEffect(() => {
+    const loadUserData = async () => {
+      setLoading(true);
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = { ...userDoc.data(), uid: userDoc.id } as UserProfile;
+          setFormData(userData);
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [user.uid]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isEditing) return;
     onSave(formData);
+    setIsEditing(false);
   };
 
   return (
@@ -733,14 +757,31 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800">Edit User</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            {!isEditing && (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                Edit Profile
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        
+        {loading ? (
+          <div className="p-6 text-center">
+            <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-2"></div>
+            <p className="text-gray-600">Loading user data...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
@@ -748,8 +789,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
                 type="text"
                 value={formData.firstName || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 placeholder="Enter first name"
+                disabled={!isEditing}
               />
             </div>
             <div>
@@ -758,8 +800,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
                 type="text"
                 value={formData.lastName || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                 placeholder="Enter last name"
+                disabled={!isEditing}
               />
             </div>
           </div>
@@ -769,8 +812,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               type="email"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               placeholder="Enter email address"
+              disabled={!isEditing}
               required
             />
           </div>
@@ -780,8 +824,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               type="tel"
               value={formData.phone || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               placeholder="Enter phone number"
+              disabled={!isEditing}
             />
           </div>
           <div>
@@ -790,8 +835,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               type="text"
               value={formData.address || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               placeholder="Enter address"
+              disabled={!isEditing}
             />
           </div>
           <div>
@@ -800,8 +846,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               type="date"
               value={formData.dateOfBirth || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               placeholder="Select date of birth"
+              disabled={!isEditing}
             />
           </div>
           <div>
@@ -810,8 +857,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               type="text"
               value={formData.occupation || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, occupation: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
               placeholder="Enter occupation"
+              disabled={!isEditing}
             />
           </div>
           <div>
@@ -819,7 +867,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
             <select
               value={formData.role}
               onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as UserRole }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+              disabled={!isEditing}
             >
               <option value="user">User</option>
               <option value="authorized">Authorized</option>
@@ -832,6 +881,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               checked={formData.isActive}
               onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              disabled={!isEditing}
             />
             <label className="ml-2 text-sm text-gray-700">Active Account</label>
           </div>
@@ -843,14 +893,25 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-            >
-              Save Changes
-            </button>
+            {isEditing ? (
+              <button
+                type="submit"
+                className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Save Changes
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Edit Profile
+              </button>
+            )}
           </div>
         </form>
+        )}
       </div>
     </div>
   );
