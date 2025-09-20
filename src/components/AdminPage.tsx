@@ -749,6 +749,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
                 value={formData.firstName || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter first name"
               />
             </div>
             <div>
@@ -758,6 +759,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
                 value={formData.lastName || ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter last name"
               />
             </div>
           </div>
@@ -768,6 +770,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter email address"
               required
             />
           </div>
@@ -778,6 +781,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               value={formData.phone || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter phone number"
             />
           </div>
           <div>
@@ -787,6 +791,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               value={formData.address || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter address"
             />
           </div>
           <div>
@@ -796,6 +801,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               value={formData.dateOfBirth || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Select date of birth"
             />
           </div>
           <div>
@@ -805,6 +811,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
               value={formData.occupation || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, occupation: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter occupation"
             />
           </div>
           <div>

@@ -223,6 +223,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={profileData.firstName}
                     onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Enter your first name"
                     required
                   />
                 </div>
@@ -235,6 +236,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={profileData.lastName}
                     onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Enter your last name"
                     required
                   />
                 </div>
@@ -251,6 +253,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={profileData.email}
                     readOnly
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                   placeholder="Email address (cannot be changed)"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
@@ -267,6 +270,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={profileData.phone}
                     onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Enter your phone number"
                   />
                 </div>
               </div>
@@ -282,6 +286,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={profileData.address}
                     onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Enter your address"
                   />
                 </div>
               </div>
@@ -297,6 +302,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={profileData.dateOfBirth}
                     onChange={(e) => setProfileData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Select your date of birth"
                   />
                 </div>
               </div>
@@ -312,6 +318,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={profileData.occupation}
                     onChange={(e) => setProfileData(prev => ({ ...prev, occupation: e.target.value }))}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Enter your occupation"
                   />
                 </div>
               </div>
@@ -350,6 +357,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={passwordData.currentPassword}
                     onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                     className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Enter your current password"
                     required
                   />
                   <button
@@ -373,6 +381,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={passwordData.newPassword}
                     onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                     className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Enter your new password"
                     required
                   />
                   <button
@@ -413,6 +422,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={passwordData.confirmPassword}
                     onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="Confirm your new password"
                     required
                   />
                   <button
