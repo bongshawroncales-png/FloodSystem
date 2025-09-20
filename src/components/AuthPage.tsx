@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, User, MapPin, Phone, Calendar, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, MapPin, Phone, Calendar, ArrowLeft, AlertTriangle, CheckCircle } from 'lucide-react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '../firebase';

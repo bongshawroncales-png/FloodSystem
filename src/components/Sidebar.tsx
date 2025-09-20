@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut, Shield, FileText, Settings, BarChart3, Users, Home, Search, Filter } from 'lucide-react';
+import { X, Menu, User, MapPin, Calendar, AlertTriangle, Eye, Trash2, LogIn, LogOut, Shield, FileText, Settings, BarChart3, Users, Home, Search, Filter, Edit } from 'lucide-react';
 import { FloodRiskArea } from '../types';
 import { useAuth } from '../hooks/useAuth';
 import { ConfirmationModal } from './ConfirmationModal';
+import { UserProfileModal } from './UserProfileModal';
 
 interface SidebarProps {
   floodRiskAreas: FloodRiskArea[];
@@ -40,6 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     areaName: ''
   });
   const { user, userRole, loading, signInWithGoogle, logout } = useAuth();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const handleDeleteClick = (areaId: string, areaName: string) => {
     // Check permissions before showing delete confirmation
@@ -394,6 +396,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {userRole === 'admin' ? 'Administrator' : userRole === 'authorized' ? 'Authorized User' : 'User'}
                   </p>
                 </div>
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Edit Profile"
+                >
+                  <Edit className="w-3 h-3 text-gray-500" />
+                </button>
               </div>
               
               <button
@@ -462,6 +471,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           cancelText="Keep Area"
         />
       </div>
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        user={user}
+      />
     </>
   );
 };
